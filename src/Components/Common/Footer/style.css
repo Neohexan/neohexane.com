@@ -1,0 +1,148 @@
+/* Fix the Sticky Footer (Flexbox) */
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.neo-global-footer-wrapper {
+  margin-top: auto; /* Forces it to the absolute bottom */
+  width: 100%;
+  border-top: 1px solid rgba(0, 255, 204, 0.2); /* Neon teal accent */
+  background: linear-gradient(to top, #04040d, #09081e);
+  padding: 40px 0 30px 0;
+  color: #94a3b8;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  position: relative;
+  z-index: 9999;
+  clear: both;
+  box-sizing: border-box;
+}
+
+.neo-footer-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .neo-footer-container {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+  }
+}
+
+/* Brand & Logo styling */
+.neo-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.neo-footer-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 229, 255, 0.2);
+  object-fit: cover;
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.15);
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.neo-footer-logo:hover {
+  transform: scale(1.08) rotate(5deg);
+  border-color: rgba(0, 229, 255, 0.6);
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.4);
+}
+
+.neo-footer-brand-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.neo-footer-brand-title {
+  color: #ffffff;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #00E5FF, #7C3AED);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.neo-footer-copyright {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  color: #64748b;
+  letter-spacing: 0.02em;
+}
+
+/* Menu CSS - Horizontal list layout and styles */
+.neo-footer-nav-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  align-items: center;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.neo-footer-nav-list .menu-item {
+  display: inline-block;
+  float: none;
+  width: auto;
+  margin: 0;
+  padding: 0;
+}
+
+.neo-footer-nav-list .menu-item a {
+  color: #94a3b8;
+  text-decoration: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: color 0.2s ease, text-shadow 0.2s ease;
+  position: relative;
+  padding: 4px 0;
+}
+
+.neo-footer-nav-list .menu-item a:hover {
+  color: #00E5FF;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
+}
+
+.neo-footer-nav-list .menu-item a::after {
+  content: '';
+  position: absolute;
+  width: 0%;
+  height: 1px;
+  bottom: 0;
+  left: 0;
+  background-color: #00E5FF;
+  box-shadow: 0 0 6px #00E5FF;
+  transition: width 0.2s ease;
+}
+
+.neo-footer-nav-list .menu-item a:hover::after {
+  width: 100%;
+}
