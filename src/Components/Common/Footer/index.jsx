@@ -1,5 +1,6 @@
 import React from 'react';
 import './style.css'; 
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -28,19 +29,22 @@ const Footer = () => {
         <nav className="neo-footer-navigation" aria-label="Footer Navigation">
           <ul className="neo-footer-nav-list">
             <li className="menu-item">
-              <a href="/">Home</a>
+              < Link to="/about" >ABOUT NEOHEXANE</Link>
             </li>
             <li className="menu-item">
-              <a href="/about">About</a>
+              < Link to="/contact-us" >CONTACT US</Link>
             </li>
             <li className="menu-item">
-              <a href="/privacy-policy">Privacy Policy</a>
+              < Link to="/accessibility">ACCESSIBILITY</Link>
             </li>
             <li className="menu-item">
-              <a href="/disclaimer">Disclaimer</a>
+              < Link to="/disclaimer" >DISCLAIMER</Link>
             </li>
             <li className="menu-item">
-              <a href="/contact">Contact</a>
+              < Link to="/privacy-policy" >PRIVACY POLICY</Link>
+            </li>
+            <li className="menu-item">
+              < Link to="/terms" >TERMS OF SERVICE</Link>
             </li>
           </ul>
         </nav>

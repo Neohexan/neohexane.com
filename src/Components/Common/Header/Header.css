@@ -1,0 +1,439 @@
+/* Core Header Layout */
+.nh-global-header {
+    display: block;
+    width: 100%;
+    background-color: #050816;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 14px 28px;
+    box-sizing: border-box;
+    z-index: 1000;
+    position: relative;
+    font-family: 'Inter', -apple-system, sans-serif;
+}
+
+/* Cinematic Overlay */
+#nh-page-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    z-index: 900;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+#nh-page-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.nh-header-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    position: relative;
+    z-index: 1001;
+}
+
+.neo-header-item {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Brand Capsule & Navigation Button */
+.nh-brand-capsule-wrap {
+    display: inline-flex;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+    padding: 4px 16px 4px 6px;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.nh-brand-capsule-wrap:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.nh-plus-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #ffffff;
+    color: #050816;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+}
+
+.nh-plus-btn:hover, .nh-plus-btn.icon-rotated {
+    background-color: #fbbf24;
+}
+
+.nh-plus-icon-svg {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nh-plus-btn.icon-rotated .nh-plus-icon-svg {
+    transform: rotate(45deg);
+}
+
+.nh-brand-logo-text {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #ffffff;
+    text-decoration: none;
+    margin-left: 12px;
+    line-height: 1;
+    transition: color 0.2s ease;
+}
+
+.nh-brand-logo-text:hover {
+    color: #fbbf24;
+}
+
+/* Secondary Navigation */
+.nh-header-right {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+}
+
+.nh-nav-list-secondary {
+    display: flex;
+    gap: 18px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.nh-nav-list-secondary a {
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 12px;
+    transition: color 0.2s ease;
+}
+
+.nh-nav-list-secondary a:hover {
+    color: #ffffff;
+}
+
+/* Auth & Bookmarks Buttons */
+.nh-auth-container {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.nh-bookmark-btn, .nh-profile-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.nh-bookmark-btn:hover, .nh-profile-btn:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.nh-bookmark-btn.active, .nh-profile-btn.active {
+    border-color: #06b6d4;
+    color: #ffffff;
+}
+
+.nh-avatar-small {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 11px;
+}
+
+/* Shared Dropdown Window CSS */
+.neo-dropdown-window {
+    position: absolute;
+    top: 130%;
+    right: 0;
+    background: #0B0F1C;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    display: none;
+    opacity: 0;
+    z-index: 1002;
+    box-sizing: border-box;
+}
+
+.neo-dropdown-window.active {
+    display: block;
+    opacity: 1;
+    animation: dropFade 0.2s ease forwards;
+}
+
+@keyframes dropFade {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Nav Menu Dropdown */
+.neo-minimal-menu {
+    width: 240px;
+    padding: 12px;
+}
+
+.nh-dropdown-header {
+    color: #777;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    padding: 5px 15px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.neo-minimal-menu ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.neo-minimal-menu a {
+    display: block;
+    padding: 10px 14px;
+    color: #d1d5db;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.neo-minimal-menu a:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+    border-color: rgba(0, 204, 255, 0.2);
+    padding-left: 18px;
+}
+
+/* Bookmark Dropdown */
+.neo-bookmark-menu {
+    width: 360px;
+    min-height: 150px;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.nh-bookmark-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+.nh-bookmark-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.nh-bookmark-count {
+    color: #6b7280;
+    font-size: 10px;
+    letter-spacing: 1px;
+}
+
+.nh-bookmark-empty, .nh-bookmark-empty-state {
+    text-align: center;
+    padding: 10px 0;
+}
+
+.nh-bookmark-empty-state p {
+    color: #6b7280;
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    margin: 15px 0;
+}
+
+.neo-switch-to-login, .nh-browse-link {
+    background: none;
+    border: none;
+    color: #fbbf24;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.nh-bookmark-scroll-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.nh-bookmark-scroll-list li {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 6px;
+}
+
+.nh-bookmark-scroll-list a {
+    display: block;
+    padding: 12px;
+    text-decoration: none;
+}
+
+.nh-article-title {
+    display: block;
+    color: #e5e7eb;
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    margin-bottom: 6px;
+}
+
+.nh-read-link {
+    color: #fbbf24;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* Auth Dropdown */
+.neo-auth-menu {
+    width: 290px;
+}
+
+.nh-auth-title {
+    color: #fff;
+    font-size: 14px;
+    letter-spacing: 1px;
+    margin: 0 0 15px 0;
+}
+
+.nh-mock-google-btn {
+    width: 100%;
+    padding: 12px;
+    background: #ffffff;
+    color: #000000;
+    border: none;
+    border-radius: 50px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.nh-auth-profile-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding-bottom: 20px;
+    margin-bottom: 10px;
+}
+
+.nh-auth-avatar-box {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.nh-auth-avatar-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.nh-auth-profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow: hidden;
+}
+
+.nh-auth-name {
+    color: #ffffff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.nh-auth-email {
+    color: #6b7280;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+}
+
+.nh-logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 14px 0;
+    background: #1f141f;
+    color: #f43f5e;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid rgba(244, 63, 94, 0.15);
+    cursor: pointer;
+    margin-top: 20px;
+    transition: all 0.2s;
+}
+
+.nh-logout-btn:hover {
+    background: #2a1622;
+    border-color: rgba(244, 63, 94, 0.3);
+}
+
+@media (max-width: 900px) {
+    .nh-global-header {
+        padding: 12px 16px;
+    }
+    .nh-navigation-secondary {
+        display: none;
+    }
+}

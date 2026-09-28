@@ -1,0 +1,123 @@
+/* =========================================
+   Neohexane Info Pages (Enhanced Design)
+   ========================================= */
+.neo-page-container {
+    background-color: #050505;
+    background-image: 
+        radial-gradient(circle at 15% 50%, rgba(0, 255, 204, 0.03), transparent 25%),
+        radial-gradient(circle at 85% 30%, rgba(124, 58, 237, 0.03), transparent 25%);
+    color: #e0e0e0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    min-height: 100vh;
+    padding: 60px 20px;
+    box-sizing: border-box;
+}
+
+.neo-page-content {
+    background: rgba(10, 12, 20, 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid rgba(0, 255, 204, 0.25); /* Subtle neon top edge */
+    border-radius: 16px;
+    padding: 50px;
+    max-width: 800px;
+    margin: 0 auto;
+    line-height: 1.7;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+    text-align: left; /* Forces paragraphs to be highly readable */
+}
+
+.neo-page-content h1 {
+    text-align: center;
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin-top: 0;
+    margin-bottom: 40px;
+    background: linear-gradient(to bottom right, #ffffff, #a0a0a0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.neo-page-content h2 {
+    font-size: 1.4rem;
+    color: #ffffff;
+    margin-top: 45px;
+    margin-bottom: 20px;
+    padding-left: 14px;
+    border-left: 3px solid #00FFCC; /* Neon structural accent */
+    line-height: 1.2;
+}
+
+.neo-page-content h3 {
+    font-size: 1.15rem;
+    color: #e0e0e0;
+    margin-top: 35px;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.neo-page-content p {
+    color: #a0a0a0;
+    margin-bottom: 24px;
+    font-size: 1.05rem;
+}
+
+.neo-page-content ul {
+    list-style: none; /* Removes default browser bullets */
+    padding-left: 0;
+    margin-bottom: 30px;
+}
+
+.neo-page-content li {
+    color: #a0a0a0;
+    margin-bottom: 14px;
+    padding-left: 28px;
+    position: relative;
+    font-size: 1.05rem;
+}
+
+/* Custom glowing bullet points */
+.neo-page-content li::before {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 11px;
+    width: 6px;
+    height: 6px;
+    background-color: #00FFCC;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(0, 255, 204, 0.8);
+}
+
+.neo-page-content a {
+    color: #00FFCC;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid rgba(0, 255, 204, 0.3);
+}
+
+.neo-page-content a:hover {
+    color: #ffffff;
+    border-bottom-color: #00FFCC;
+    text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .neo-page-container {
+        padding: 40px 15px;
+    }
+    .neo-page-content {
+        padding: 30px 20px;
+        border-radius: 12px;
+    }
+    .neo-page-content h2 {
+        font-size: 1.25rem;
+    }
+    .neo-page-content p, 
+    .neo-page-content li {
+        font-size: 1rem;
+    }
+}
