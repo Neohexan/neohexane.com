@@ -1,16 +1,30 @@
-// src/api/axiosClient.js
 import axios from 'axios';
 
-// Create a custom instance
+// Your existing Axios instance creation
 const api = axios.create({
-  // Replace this with your actual WordPress or custom backend URL
-  baseURL: 'https://neohexane.com/wp-json/wp/v2', 
-  timeout: 10000, // Aborts the request if it takes longer than 10 seconds
+  baseURL: 'https://neohexane.com/wp-json/wp/v2', // Adjust to your actual URL
   headers: {
     'Content-Type': 'application/json',
-    // If you add custom authentication later, you can inject tokens here:
-    // 'Authorization': 'Bearer YOUR_TOKEN'
-  }
+  },
 });
+
+// --- ADD THIS INTERCEPTOR ---
+// This intercepts every request before it leaves your app
+api.interceptors.request.use(
+  (config) => {
+    // Look for the token we saved during the Google Login
+    const token = localStorage.getItem('neo_token');
+    
+    // If the token exists, attach it to the Authorization header
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 export default api;

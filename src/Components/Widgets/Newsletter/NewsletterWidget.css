@@ -1,0 +1,186 @@
+.neo-sidebar-newsletter { 
+    padding: 24px; 
+    border-radius: 12px; 
+    border: 1px solid var(--neo-border, rgba(255, 255, 255, 0.1)); 
+    background-color: var(--neo-news-bg, #0A0E1A); 
+}
+
+.neo-news-bold-title { 
+    color: var(--neo-text-heading, #ffffff) !important; 
+    font-family: 'Plus Jakarta Sans', sans-serif; 
+    font-size: 20px; 
+    font-weight: 800; 
+    margin-top: 0; 
+    margin-bottom: 16px; 
+}
+
+.neo-news-desc { 
+    font-size: 14px; 
+    color: var(--neo-news-text, #a1a1aa); 
+    margin-bottom: 20px; 
+    line-height: 1.5;
+}
+
+.mailpoet_form_inner { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 12px; 
+}
+
+.mailpoet_text { 
+    background: var(--neo-news-input-bg, #050816); 
+    border: 1px solid var(--neo-news-input-border, rgba(255, 255, 255, 0.2)); 
+    color: var(--neo-text-main, #d4d4d8); 
+    padding: 12px 16px; 
+    border-radius: 4px; 
+    outline: none; 
+    transition: border-color 0.2s ease;
+}
+
+.mailpoet_text:focus {
+    border-color: #299093; /* Teal focus */
+}
+
+.mailpoet_text:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.mailpoet_submit { 
+    background: var(--neo-news-btn-bg, #2D89C8); 
+    color: #ffffff; 
+    border: none; 
+    padding: 12px 16px; 
+    font-weight: 700; 
+    border-radius: 4px; 
+    cursor: pointer; 
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.mailpoet_submit:hover:not(:disabled) {
+    background: var(--neo-news-btn-hover, #1e70a6);
+}
+
+.mailpoet_submit.loading {
+    opacity: 0.7;
+    cursor: wait;
+}
+
+.neo-privacy { 
+    font-size: 11px; 
+    margin-top: 14px; 
+    color: var(--neo-text-muted, #a1a1aa); 
+}
+
+.neo-privacy a {
+    color: inherit;
+    text-decoration: underline;
+}
+
+/* ==========================================
+   SUCCESS STATE ANIMATION
+   ========================================== */
+.neo-news-success-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(52, 199, 89, 0.1);
+    border: 1px solid rgba(52, 199, 89, 0.2);
+    padding: 14px 16px;
+    border-radius: 6px;
+    animation: neoNewsFadeIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.neo-news-success-card .success-icon {
+    color: #34C759;
+    flex-shrink: 0;
+}
+
+.neo-news-success-card div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.neo-news-success-card strong {
+    color: #34C759;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.neo-news-success-card p {
+    margin: 0;
+    font-size: 12px;
+    color: var(--neo-text-main, #d4d4d8);
+}
+
+@keyframes neoNewsFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================
+   LIGHT MODE OVERRIDES
+   ========================================== */
+body.neo-light-mode .neo-sidebar-newsletter {
+    background-color: #FAF8F5;
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+body.neo-light-mode .neo-news-success-card p {
+    color: #52525b;
+}
+
+/* ==========================================
+   MOBILE EXACT MATCH REPLICA
+   ========================================== */
+@media (max-width: 900px) {
+    /* 1. Remove borders and add massive vertical spacing */
+    .neo-sidebar-newsletter {
+        padding: 60px 24px !important; 
+        border: none !important;       
+        text-align: center !important; 
+        border-radius: 0 !important;   
+    }
+    
+    /* 2. Enlarge and tighten the title */
+    .neo-news-bold-title {
+        font-size: 32px !important;
+        line-height: 1.1 !important;
+        margin-bottom: 16px !important;
+        letter-spacing: -0.5px;
+    }
+    
+    /* 3. Center the description and wrap it cleanly */
+    .neo-news-desc {
+        font-size: 15px !important;
+        margin: 0 auto 32px auto !important;
+        line-height: 1.6 !important;
+        max-width: 380px; 
+    }
+    
+    /* 4. Constrain the form width so inputs don't stretch edge-to-edge */
+    .mailpoet_form_inner {
+        max-width: 380px; 
+        margin: 0 auto !important; 
+        width: 100%;
+    }
+    
+    /* 5. Make inputs/buttons taller for mobile touch targets */
+    .mailpoet_text, .mailpoet_submit {
+        padding: 16px !important; 
+        font-size: 15px !important;
+    }
+    
+    /* 6. Force the button text to uppercase */
+    .mailpoet_submit {
+        text-transform: uppercase !important; 
+        letter-spacing: 1px !important;
+        font-weight: 800 !important;
+    }
+    
+    /* 7. Push privacy link down */
+    .neo-privacy {
+        margin-top: 24px !important;
+    }
+}

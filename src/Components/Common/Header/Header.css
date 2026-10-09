@@ -1,439 +1,428 @@
-/* Core Header Layout */
-.nh-global-header {
-    display: block;
-    width: 100%;
-    background-color: #050816;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 14px 28px;
-    box-sizing: border-box;
-    z-index: 1000;
-    position: relative;
-    font-family: 'Inter', -apple-system, sans-serif;
-}
-
-/* Cinematic Overlay */
+/* --- INVISIBLE OVERLAY TO CAPTURE CLICKS OUTSIDE --- */
 #nh-page-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    z-index: 900;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 999; 
+  display: none;
+  background: transparent;
 }
-
 #nh-page-overlay.active {
-    opacity: 1;
-    visibility: visible;
+  display: block;
 }
 
-.nh-header-container {
-    max-width: 1280px;
-    margin: 0 auto;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 24px;
-    position: relative;
-    z-index: 1001;
+/* --- INVISIBLE SPACER (Rendered ONLY on Archive Page) --- */
+.nh-header-spacer {
+  height: 64px; 
+  width: 100%;
+  display: block;
 }
 
-.neo-header-item {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
+/* --- GLOBAL FLOATING HEADER (Sticky everywhere else) --- */
+.nh-floating-header {
+  position: sticky; 
+  top: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 12px 16px; 
+  z-index: 1000;
+  pointer-events: none; 
 }
 
-/* Brand Capsule & Navigation Button */
-.nh-brand-capsule-wrap {
-    display: inline-flex;
-    align-items: center;
-    background-color: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 9999px;
-    padding: 4px 16px 4px 6px;
-    transition: background-color 0.3s ease, border-color 0.3s ease;
+/* --- ARCHIVE PAGE SPECIFIC (Locked via Portal directly to viewport glass) --- */
+.nh-floating-header.nh-header-archive {
+  position: fixed !important; 
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  max-width: 100vw !important;
+  z-index: 999999 !important;
+  transform: none !important;
+  margin: 0 !important;
 }
 
-.nh-brand-capsule-wrap:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+.nh-floating-header > * {
+  pointer-events: auto; 
 }
 
+/* --- LEFT PILL SCROLL BEHAVIOR --- */
+.nh-segment-left {
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease, background 0.3s ease !important;
+  opacity: 1;
+}
+
+/* Blocked strictly by React on the archive page, active globally on scroll */
+.nh-segment-left.hidden-pill {
+  transform: translateY(-150%); 
+  opacity: 0; 
+  pointer-events: none;
+}
+
+/* --- SEGMENT DEFAULT STATES --- */
+.nh-glass-pill,
+.nh-glass-circle {
+  position: relative; 
+  z-index: 1; 
+  background: rgba(255, 255, 255, 0.2); 
+  border: none; 
+}
+
+.nh-glass-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px; 
+  padding: 4px 12px 4px 4px; 
+  border-radius: 40px;
+}
+
+.nh-glass-circle {
+  width: 40px; 
+  height: 40px; 
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  color: #000;
+  outline: none;
+  -webkit-tap-highlight-color: transparent; 
+  transition: background 0.3s ease; 
+}
+
+/* --- PRE-RENDERED FROSTED GLASS LAYER --- */
+.nh-glass-pill::before,
+.nh-glass-circle::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: inherit; 
+  background: rgba(255, 255, 255, 0.15); 
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: none; 
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  opacity: 0; 
+  z-index: -1; 
+  transition: opacity 0.3s ease; 
+  pointer-events: none;
+}
+
+/* --- SCROLLED STATE --- */
+.nh-floating-header.is-scrolled .nh-glass-pill,
+.nh-floating-header.is-scrolled .nh-glass-circle {
+  background: transparent; 
+}
+
+.nh-floating-header.is-scrolled .nh-glass-pill::before,
+.nh-floating-header.is-scrolled .nh-glass-circle::before {
+  opacity: 1; 
+}
+
+/* --- STANDALONE SVG BUTTON --- */
+.nh-svg-only-btn {
+  background: transparent;
+  border: none;
+  padding: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.nh-svg-only-btn:hover {
+  opacity: 0.7;
+}
+
+/* --- BUTTONS & BRANDING --- */
 .nh-plus-btn {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background-color: #ffffff;
-    color: #050816;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.3s ease, background 0.3s ease;
+  color: #000;
+  outline: none; 
+  -webkit-tap-highlight-color: transparent; 
 }
 
-.nh-plus-btn:hover, .nh-plus-btn.icon-rotated {
-    background-color: #fbbf24;
-}
+.nh-plus-btn:hover { background: rgba(0, 0, 0, 0.1); }
+.nh-plus-btn:focus { outline: none; }
 
-.nh-plus-icon-svg {
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.nh-plus-btn.icon-rotated .nh-plus-icon-svg {
-    transform: rotate(45deg);
+/* YELLOW ACTIVE STATE WHEN CLICKED */
+.nh-plus-btn.icon-rotated { 
+  transform: rotate(45deg); 
+  background: #facc15 !important; 
+  color: #000;
 }
 
 .nh-brand-logo-text {
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 700;
-    font-size: 18px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: #ffffff;
-    text-decoration: none;
-    margin-left: 12px;
-    line-height: 1;
-    transition: color 0.2s ease;
+  font-family: "Playfair Display", "Bodoni MT", "Didot", "Georgia", serif; 
+  font-weight: 900;
+  font-size: 1.1rem;
+  letter-spacing: 0.5px;
+  color: #000;
+  text-decoration: none;
+  text-transform: uppercase; 
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.nh-brand-logo-text:hover {
-    color: #fbbf24;
-}
-
-/* Secondary Navigation */
-.nh-header-right {
-    display: flex;
-    align-items: center;
-    gap: 28px;
-}
-
-.nh-nav-list-secondary {
-    display: flex;
-    gap: 18px;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-
-.nh-nav-list-secondary a {
-    color: #6b7280;
-    text-decoration: none;
-    font-size: 12px;
-    transition: color 0.2s ease;
-}
-
-.nh-nav-list-secondary a:hover {
-    color: #ffffff;
-}
-
-/* Auth & Bookmarks Buttons */
-.nh-auth-container {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-}
-
-.nh-bookmark-btn, .nh-profile-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 12px;
-    background-color: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #9ca3af;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.nh-bookmark-btn:hover, .nh-profile-btn:hover {
-    border-color: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
-    background-color: rgba(255, 255, 255, 0.1);
-}
-
-.nh-bookmark-btn.active, .nh-profile-btn.active {
-    border-color: #06b6d4;
-    color: #ffffff;
+.nh-segment-right {
+  display: flex;
+  align-items: center;
+  gap: 16px; 
 }
 
 .nh-avatar-small {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 11px;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
-/* Shared Dropdown Window CSS */
+/* =========================================
+   DARK MODE DROPDOWN WINDOWS
+   ========================================= */
+
+.neo-header-item {
+  position: relative;
+}
+
 .neo-dropdown-window {
-    position: absolute;
-    top: 130%;
-    right: 0;
-    background: #0B0F1C;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-    display: none;
-    opacity: 0;
-    z-index: 1002;
-    box-sizing: border-box;
+  position: absolute;
+  top: calc(100% + 16px);
+  background: #111218; 
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.2s ease;
+  z-index: 1001;
+  border: 1px solid rgba(255, 255, 255, 0.05); 
+  color: #ffffff; 
 }
 
 .neo-dropdown-window.active {
-    display: block;
-    opacity: 1;
-    animation: dropFade 0.2s ease forwards;
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
 }
 
-@keyframes dropFade {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
+.neo-minimal-menu { left: 0; min-width: 200px; }
+.neo-bookmark-menu { right: 0; min-width: 320px; }
+.neo-auth-menu { right: 0; min-width: 280px; }
+
+.nh-popup-body {
+  padding: 16px; 
 }
 
-/* Nav Menu Dropdown */
-.neo-minimal-menu {
-    width: 240px;
-    padding: 12px;
-}
-
+/* --- NAVIGATION SPECIFICS --- */
 .nh-dropdown-header {
-    color: #777;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    margin-bottom: 12px;
-    padding: 5px 15px 12px;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+  font-family: monospace;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #64748b; 
+  margin-bottom: 12px;
+  padding: 0 12px 12px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08); 
 }
 
 .neo-minimal-menu ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 .neo-minimal-menu a {
-    display: block;
-    padding: 10px 14px;
-    color: #d1d5db;
-    text-decoration: none;
-    font-size: 12px;
-    font-weight: 500;
-    border-radius: 6px;
-    border: 1px solid transparent;
-    transition: all 0.2s ease;
+  display: block;
+  padding: 10px 12px;
+  color: #f1f5f9;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-radius: 8px;
+  transition: background 0.2s ease;
 }
 
 .neo-minimal-menu a:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: #ffffff;
-    border-color: rgba(0, 204, 255, 0.2);
-    padding-left: 18px;
+  background: rgba(255, 255, 255, 0.05);
 }
 
-/* Bookmark Dropdown */
-.neo-bookmark-menu {
-    width: 360px;
-    min-height: 150px;
-    font-family: 'JetBrains Mono', monospace;
-}
-
+/* --- BOOKMARK SPECIFICS --- */
 .nh-bookmark-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-    padding-bottom: 15px;
-    margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
 }
 
 .nh-bookmark-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #ffffff;
-    font-weight: 700;
-    font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: monospace;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #ffffff;
 }
 
 .nh-bookmark-count {
-    color: #6b7280;
-    font-size: 10px;
-    letter-spacing: 1px;
+  font-family: monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #64748b; 
 }
 
-.nh-bookmark-empty, .nh-bookmark-empty-state {
-    text-align: center;
-    padding: 10px 0;
+.nh-bookmark-empty,
+.nh-bookmark-empty-state {
+  text-align: left;
+  padding: 8px 0;
 }
 
-.nh-bookmark-empty-state p {
-    color: #6b7280;
-    font-size: 12px;
-    font-family: 'Inter', sans-serif;
-    margin: 15px 0;
+.neo-switch-to-login-link {
+  background: none;
+  border: none;
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: #facc15; 
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  line-height: 1.5;
+  transition: opacity 0.2s ease;
 }
 
-.neo-switch-to-login, .nh-browse-link {
-    background: none;
-    border: none;
-    color: #fbbf24;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    text-decoration: none;
+.neo-switch-to-login-link:hover {
+  opacity: 0.8;
 }
 
 .nh-bookmark-scroll-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    max-height: 280px;
-    overflow-y: auto;
-    padding-right: 5px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.nh-bookmark-scroll-list li {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.05);
-    border-radius: 6px;
+.nh-bookmark-scroll-list li a {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03); 
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 12px;
+  text-decoration: none;
+  transition: border-color 0.2s ease;
 }
 
-.nh-bookmark-scroll-list a {
-    display: block;
-    padding: 12px;
-    text-decoration: none;
+.nh-bookmark-scroll-list li a:hover {
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .nh-article-title {
-    display: block;
-    color: #e5e7eb;
-    font-size: 12px;
-    font-family: 'Inter', sans-serif;
-    margin-bottom: 6px;
+  color: #ffffff;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  font-weight: 500;
 }
 
-.nh-read-link {
-    color: #fbbf24;
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
+.nh-read-article {
+  font-family: monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #facc15; 
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
-/* Auth Dropdown */
-.neo-auth-menu {
-    width: 290px;
-}
-
-.nh-auth-title {
-    color: #fff;
-    font-size: 14px;
-    letter-spacing: 1px;
-    margin: 0 0 15px 0;
-}
-
-.nh-mock-google-btn {
-    width: 100%;
-    padding: 12px;
-    background: #ffffff;
-    color: #000000;
-    border: none;
-    border-radius: 50px;
-    font-weight: 600;
-    cursor: pointer;
-}
-
+/* --- AUTH SPECIFICS --- */
 .nh-auth-profile-header {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-    padding-bottom: 20px;
-    margin-bottom: 10px;
-}
-
-.nh-auth-avatar-box {
-    width: 52px;
-    height: 52px;
-    border-radius: 12px;
-    overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
 .nh-auth-avatar-box img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+  width: 56px;
+  height: 56px;
+  border-radius: 12px; 
+  object-fit: cover;
 }
 
 .nh-auth-profile-info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .nh-auth-name {
-    color: #ffffff;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 15px;
-    font-weight: 700;
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #ffffff;
 }
 
 .nh-auth-email {
-    color: #6b7280;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: #64748b;
 }
 
 .nh-logout-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    padding: 14px 0;
-    background: #1f141f;
-    color: #f43f5e;
-    border-radius: 8px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
-    font-weight: 500;
-    border: 1px solid rgba(244, 63, 94, 0.15);
-    cursor: pointer;
-    margin-top: 20px;
-    transition: all 0.2s;
+  width: 100%;
+  padding: 12px;
+  background: rgba(248, 113, 113, 0.05); 
+  border: none;
+  border-radius: 12px;
+  font-family: monospace;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #f87171; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
 }
 
 .nh-logout-btn:hover {
-    background: #2a1622;
-    border-color: rgba(244, 63, 94, 0.3);
+  background: rgba(248, 113, 113, 0.1);
 }
 
-@media (max-width: 900px) {
-    .nh-global-header {
-        padding: 12px 16px;
-    }
-    .nh-navigation-secondary {
-        display: none;
-    }
+.nh-logout-icon {
+  font-size: 0.9rem;
+}
+
+.nh-auth-title {
+  font-family: monospace;
+  font-size: 0.85rem;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #ffffff;
+  margin-top: 0;
+  margin-bottom: 16px;
 }

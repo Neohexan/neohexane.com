@@ -1,71 +1,138 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../../../api/axiosClient';
 import './Single.css';
+import ArticleSidebar from '../../Widgets/ArticleSidebar';
+import RetroTVError from '../../Widgets/RetroTVError/RetroTVError'; 
 
-// --- DATA CONSTANTS ---
-const chemistryQuotes = [
-  ["Chemistry is the melody you can play on vibrating strings.", "Michio Kaku"],
-  ["Nothing exists except atoms and empty space; everything else is opinion.", "Democritus"],
-  ["The meeting of two personalities is like the contact of two chemical substances.", "Carl Jung"],
-  ["Every aspect of the world today is affected by chemistry.", "Linus Pauling"],
-  ["Biochemistry is the science of life. All our life processes are essentially chemical reactions.", "Aaron Ciechanover"],
-  ["A chemist in his laboratory is not a mere technician: he is also a child confronting natural phenomena.", "Marie Curie"],
-  ["Chemistry begins in the stars. The stars are the source of the chemical elements.", "Carl Sagan"]
-];
 
-const bohrElements = [
-  { sym: 'Na', sub: '11p+12n', shells: [2, 8, 1] },
-  { sym: 'Ar', sub: '18p+22n', shells: [2, 8, 8] },
-  { sym: 'K',  sub: '19p+20n', shells: [2, 8, 8, 1] },
-  { sym: 'Fe', sub: '26p+30n', shells: [2, 8, 14, 2] },
-  { sym: 'Cu', sub: '29p+35n', shells: [2, 8, 18, 1] },
-  { sym: 'Au', sub: '79p+118n', shells: [2, 8, 18, 32, 18, 1] }
-];
+// ==========================================
+// 1. REUSABLE TAG FAN COMPONENT (Main H1)
+// ==========================================
+const TagFan = ({ text, textColor = '#FFFFFF', finalColor, layers, delay = 0, canReveal = true, className = '' }) => {
+  const intermediateLayers = layers.slice(0, -1);
+  return (
+    <span
+      data-can-reveal={canReveal ? 'true' : 'false'}
+      style={{ '--delay': `${delay}s` }}
+      className={`mr-tag-fan ${className}`}
+    >
+      <span className="mr-tag-base" aria-hidden="true" />
+      {intermediateLayers.map((color, index) => (
+        <span
+          key={index}
+          className="mr-tag-layer"
+          style={{ backgroundColor: color, '--index': index }}
+          aria-hidden="true"
+        />
+      ))}
+      <span
+        className="mr-tag-layer mr-text-layer"
+        style={{ backgroundColor: finalColor, color: textColor, '--index': intermediateLayers.length }}
+      >
+        <span>{text}</span>
+      </span>
+    </span>
+  );
+};
 
-// FULL 118 Element Array Restored (x, y coordinates fixed)
-const ptData = [
-  ['H',0,0,'#007AFF'], ['He',0,17,'#5856D6'],
-  ['Li',1,0,'#FF3B30'], ['Be',1,1,'#FF9500'], ['B',1,12,'#34C759'], ['C',1,13,'#007AFF'], ['N',1,14,'#007AFF'], ['O',1,15,'#007AFF'], ['F',1,16,'#007AFF'], ['Ne',1,17,'#5856D6'],
-  ['Na',2,0,'#FF3B30'], ['Mg',2,1,'#FF9500'], ['Al',2,12,'#5AC8FA'], ['Si',2,13,'#34C759'], ['P',2,14,'#007AFF'], ['S',2,15,'#007AFF'], ['Cl',2,16,'#007AFF'], ['Ar',2,17,'#5856D6'],
-  ['K',3,0,'#FF3B30'], ['Ca',3,1,'#FF9500'], ['Sc',3,2,'#FFCC00'], ['Ti',3,3,'#FFCC00'], ['V',3,4,'#FFCC00'], ['Cr',3,5,'#FFCC00'], ['Mn',3,6,'#FFCC00'], ['Fe',3,7,'#FFCC00'], ['Co',3,8,'#FFCC00'], ['Ni',3,9,'#FFCC00'], ['Cu',3,10,'#FFCC00'], ['Zn',3,11,'#FFCC00'], ['Ga',3,12,'#5AC8FA'], ['Ge',3,13,'#34C759'], ['As',3,14,'#34C759'], ['Se',3,15,'#007AFF'], ['Br',3,16,'#007AFF'], ['Kr',3,17,'#5856D6'],
-  ['Rb',4,0,'#FF3B30'], ['Sr',4,1,'#FF9500'], ['Y',4,2,'#FFCC00'], ['Zr',4,3,'#FFCC00'], ['Nb',4,4,'#FFCC00'], ['Mo',4,5,'#FFCC00'], ['Tc',4,6,'#FFCC00'], ['Ru',4,7,'#FFCC00'], ['Rh',4,8,'#FFCC00'], ['Pd',4,9,'#FFCC00'], ['Ag',4,10,'#FFCC00'], ['Cd',4,11,'#FFCC00'], ['In',4,12,'#5AC8FA'], ['Sn',4,13,'#5AC8FA'], ['Sb',4,14,'#34C759'], ['Te',4,15,'#34C759'], ['I',4,16,'#007AFF'], ['Xe',4,17,'#5856D6'],
-  ['Cs',5,0,'#FF3B30'], ['Ba',5,1,'#FF9500'], ['*',5,2,'#999999'], ['Hf',5,3,'#FFCC00'], ['Ta',5,4,'#FFCC00'], ['W',5,5,'#FFCC00'], ['Re',5,6,'#FFCC00'], ['Os',5,7,'#FFCC00'], ['Ir',5,8,'#FFCC00'], ['Pt',5,9,'#FFCC00'], ['Au',5,10,'#FFCC00'], ['Hg',5,11,'#FFCC00'], ['Tl',5,12,'#5AC8FA'], ['Pb',5,13,'#5AC8FA'], ['Bi',5,14,'#5AC8FA'], ['Po',5,15,'#5AC8FA'], ['At',5,16,'#34C759'], ['Rn',5,17,'#5856D6'],
-  ['Fr',6,0,'#FF3B30'], ['Ra',6,1,'#FF9500'], ['**',6,2,'#999999'], ['Rf',6,3,'#FFCC00'], ['Db',6,4,'#FFCC00'], ['Sg',6,5,'#FFCC00'], ['Bh',6,6,'#FFCC00'], ['Hs',6,7,'#FFCC00'], ['Mt',6,8,'#FFCC00'], ['Ds',6,9,'#FFCC00'], ['Rg',6,10,'#FFCC00'], ['Cn',6,11,'#FFCC00'], ['Nh',6,12,'#5AC8FA'], ['Fl',6,13,'#5AC8FA'], ['Mc',6,14,'#5AC8FA'], ['Lv',6,15,'#5AC8FA'], ['Ts',6,16,'#34C759'], ['Og',6,17,'#5856D6'],
-  ['La',7.5,2,'#FF2D55'], ['Ce',7.5,3,'#FF2D55'], ['Pr',7.5,4,'#FF2D55'], ['Nd',7.5,5,'#FF2D55'], ['Pm',7.5,6,'#FF2D55'], ['Sm',7.5,7,'#FF2D55'], ['Eu',7.5,8,'#FF2D55'], ['Gd',7.5,9,'#FF2D55'], ['Tb',7.5,10,'#FF2D55'], ['Dy',7.5,11,'#FF2D55'], ['Ho',7.5,12,'#FF2D55'], ['Er',7.5,13,'#FF2D55'], ['Tm',7.5,14,'#FF2D55'], ['Yb',7.5,15,'#FF2D55'], ['Lu',7.5,16,'#FFCC00'],
-  ['Ac',8.5,2,'#FF6482'], ['Th',8.5,3,'#FF6482'], ['Pa',8.5,4,'#FF6482'], ['U',8.5,5,'#FF6482'], ['Np',8.5,6,'#FF6482'], ['Pu',8.5,7,'#FF6482'], ['Am',8.5,8,'#FF6482'], ['Cm',8.5,9,'#FF6482'], ['Bk',8.5,10,'#FF6482'], ['Cf',8.5,11,'#FF6482'], ['Es',8.5,12,'#FF6482'], ['Fm',8.5,13,'#FF6482'], ['Md',8.5,14,'#FF6482'], ['No',8.5,15,'#FF6482'], ['Lr',8.5,16,'#FFCC00']
-];
+// ==========================================
+// 2. SMOOTH STAGGERED WORD REVEAL (Main H1)
+// ==========================================
+const WordReveal = ({ text, baseDelay, wordInterval = 0.12, canReveal = true, className = '' }) => {
+  const words = text.split(' ').filter(w => w.trim().length > 0);
+  return (
+    <span className={`mr-word-reveal ${className}`}>
+      {words.map((word, idx) => {
+        const delay = baseDelay + idx * wordInterval;
+        return (
+          <span
+            key={idx}
+            className={`mr-word-span ${canReveal ? 'revealed' : ''}`}
+            style={{ transitionDelay: `${delay}s` }}
+          >
+            {word}
+          </span>
+        );
+      })}
+    </span>
+  );
+};
 
+// ==========================================
+// 3. MEMOIZED CONTENT FIREWALL
+// ==========================================
+const MemoizedArticleContent = React.memo(({ html }) => {
+  const contentRef = useRef(null);
+
+  useEffect(() => {
+    if (!contentRef.current) return;
+
+    const wrappers = contentRef.current.querySelectorAll('.neo-interior-wrapper');
+    if (wrappers.length === 0) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const el = entry.target;
+          el.classList.add('is-visible');
+
+          const gooeyHeading = el.querySelector('.neo-gooey-heading');
+          const wordCount = el.querySelectorAll('.neo-gooey-word').length;
+          const totalTime = (0.8 + (wordCount * 0.08)) * 1000;
+
+          setTimeout(() => {
+            if (gooeyHeading) gooeyHeading.style.filter = 'none'; 
+          }, totalTime + 50);
+
+          observer.unobserve(el);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+
+    wrappers.forEach(w => observer.observe(w));
+    return () => observer.disconnect();
+  }, [html]); 
+
+  return (
+    <article 
+      ref={contentRef}
+      className="neo-post-content" 
+      dangerouslySetInnerHTML={{ __html: html }} 
+    />
+  );
+});
+
+// ==========================================
+// MAIN POST COMPONENT
+// ==========================================
 const Post = () => {
   const { slug } = useParams();
   const [post, setPost] = useState(null);
   const [relatedPosts, setRelatedPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isLightMode, setIsLightMode] = useState(false);
   const [savedArticles, setSavedArticles] = useState([]);
   
-  // Widgets State
-  const [quote] = useState(chemistryQuotes[Math.floor(Math.random() * chemistryQuotes.length)]);
-  const [quoteTheme] = useState(Math.random() > 0.5 ? 'theme-industrial' : 'theme-quantum');
-  const [bohrIndex, setBohrIndex] = useState(Math.floor(Math.random() * bohrElements.length));
-  
+  const [isScrolledDown, setIsScrolledDown] = useState(false);
+  const [canReveal, setCanReveal] = useState(false); 
+  const lastScrollY = useRef(0);
   const scrollerRef = useRef(null);
 
-  // Initialize Theme
-  useEffect(() => {
+  const [isLightMode, setIsLightMode] = useState(() => {
     const savedTheme = localStorage.getItem('neo_theme');
-    const systemPrefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
-    const shouldBeLight = savedTheme === 'light' || (!savedTheme && systemPrefersLight);
-    
-    setIsLightMode(shouldBeLight);
-    if (shouldBeLight) {
+    if (savedTheme) return savedTheme === 'light';
+    return window.matchMedia('(prefers-color-scheme: light)').matches;
+  });
+
+  useEffect(() => {
+    if (isLightMode) {
       document.body.classList.add('neo-light-mode');
       document.documentElement.classList.add('neo-light-mode');
       const rootEl = document.getElementById('root');
       if (rootEl) rootEl.classList.add('neo-light-mode');
     }
-  }, []);
+  }, [isLightMode]);
 
   const toggleTheme = () => {
     const newMode = !isLightMode;
@@ -74,14 +141,27 @@ const Post = () => {
     document.body.classList.toggle('neo-light-mode', newMode);
     document.documentElement.classList.toggle('neo-light-mode', newMode);
     
-    // Explicitly target the React #root div to prevent index.css black background bleeding through
     const rootEl = document.getElementById('root');
     if (rootEl) rootEl.classList.toggle('neo-light-mode', newMode);
   };
 
-  // Fetch Post Data
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
+        setIsScrolledDown(true); 
+      } else {
+        setIsScrolledDown(false); 
+      }
+      lastScrollY.current = currentScrollY;
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   useEffect(() => {
     setLoading(true);
+    setCanReveal(false); 
     window.scrollTo(0, 0); 
 
     api.get(`/posts?slug=${slug}&_embed`)
@@ -96,12 +176,151 @@ const Post = () => {
       .then((res) => {
         if(res) setRelatedPosts(res.data);
         setLoading(false);
+        setTimeout(() => setCanReveal(true), 150);
       })
       .catch((err) => {
         setError(err.message);
         setLoading(false);
       });
   }, [slug]);
+
+  // ==========================================
+  // BULLETPROOF H1 TITLE ENGINE
+  // ==========================================
+  const dynamicTitle = useMemo(() => {
+    if (!post) return null;
+
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = post.title.rendered;
+    const cleanText = tempDiv.textContent || tempDiv.innerText || "";
+    const words = cleanText.trim().split(/\s+/).filter(w => w.trim().length > 0);
+
+    if (words.length === 0) return null;
+    const elements = [];
+    
+    if (words.length < 3) {
+        elements.push(<WordReveal key="naked-all" text={cleanText} baseDelay={0.0} wordInterval={0.15} canReveal={canReveal} />);
+    } else {
+        let index = 0;
+        let delaySeq = 0.0;
+        let currentPillIdx = 0;
+
+        const addTeal = (text) => { elements.push(<TagFan key={`teal-${index}`} text={text} textColor="#FFFFFF" finalColor="#299093" layers={['#061A1E', '#A5A096', '#299093']} delay={delaySeq} canReveal={canReveal} />); delaySeq += 0.2; };
+        const addWhite = (text) => { elements.push(<TagFan key={`white-${index}`} text={text} textColor="#000000" finalColor="#FFFFFF" layers={['#EF6156', '#299093', '#A5A096', '#FFFFFF']} delay={delaySeq} canReveal={canReveal} className="mr-tag-white" />); delaySeq += 0.2; };
+        const addCoral = (text) => { elements.push(<TagFan key={`coral-${index}`} text={text} textColor="#FFFFFF" finalColor="#EF6156" layers={['#EF6156', '#299093', '#A5A096', '#EF6156']} delay={delaySeq} canReveal={canReveal} />); delaySeq += 0.2; };
+        const addNaked = (text) => { elements.push(<WordReveal key={`naked-${index}`} text={text} baseDelay={delaySeq} canReveal={canReveal} />); delaySeq += 0.2; };
+
+        while (index < words.length) {
+            const word = words[index];
+            const letterCount = word.replace(/[^a-zA-Z0-9]/g, '').length;
+
+            if (letterCount <= 3) {
+                addNaked(word);
+                index++;
+                continue;
+            }
+
+            if (currentPillIdx === 0) {
+                if (index + 1 < words.length && words[index+1].replace(/[^a-zA-Z0-9]/g, '').length > 3) {
+                    addTeal(words.slice(index, index + 2).join(' '));
+                    index += 2;
+                } else {
+                    addTeal(word);
+                    index++;
+                }
+                currentPillIdx++;
+            } else if (currentPillIdx === 1) {
+                addNaked(word);
+                currentPillIdx++;
+                index++;
+            } else if (currentPillIdx === 2) {
+                addWhite(word);
+                currentPillIdx++;
+                index++;
+            } else if (currentPillIdx === 3) {
+                addCoral(word);
+                currentPillIdx++;
+                index++;
+            } else {
+                const remaining = words.slice(index).join(' ');
+                addNaked(remaining);
+                break; 
+            }
+        }
+    }
+
+    return (
+      <h1 className="neo-article-title neo-pill-heading">
+        {elements}
+      </h1>
+    );
+  }, [post, isLightMode, canReveal]);
+
+  // ==========================================
+  // PURE HTML GOOEY + 5-COLOR ANIMATED DOT PARSER
+  // ==========================================
+  const parsedContentHtml = useMemo(() => {
+    if (!post) return { __html: '' };
+
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(post.content.rendered, 'text/html');
+      const headings = doc.querySelectorAll('h2, h3, h4, h5, h6');
+
+      const dotPalettes = isLightMode ? [
+        ['#EF6156', '#FFBD00', '#299093', '#EF6156', '#FFBD00'], 
+        ['#299093', '#EF6156', '#FFBD00', '#299093', '#EF6156'], 
+        ['#FFBD00', '#299093', '#EF6156', '#FFBD00', '#299093'], 
+      ] : [
+        ['#A5A096', '#EF6156', '#FFBD00', '#299093', '#A5A096'], 
+        ['#299093', '#A5A096', '#EF6156', '#FFBD00', '#299093'], 
+        ['#FFBD00', '#299093', '#A5A096', '#EF6156', '#FFBD00'], 
+        ['#EF6156', '#FFBD00', '#299093', '#A5A096', '#EF6156'], 
+      ];
+
+      headings.forEach((heading, hIndex) => {
+        const text = heading.textContent.trim();
+        const words = text.split(/\s+/).filter(w => w.trim().length > 0);
+        if (words.length === 0) return;
+
+        const originalTag = heading.tagName.toLowerCase();
+        
+        const wrapper = doc.createElement('div');
+        wrapper.className = `neo-interior-wrapper is-${originalTag}-wrapper`;
+        heading.parentNode.insertBefore(wrapper, heading);
+
+        const theme = dotPalettes[hIndex % dotPalettes.length];
+        const dot = doc.createElement('span');
+        dot.className = 'mr-animated-dot';
+        
+        let layersHtml = `<span class="mr-dot-base"></span>`;
+        theme.forEach((color, i) => {
+           layersHtml += `<span class="mr-dot-layer" style="background-color: ${color}; --index: ${i};"></span>`;
+        });
+        dot.innerHTML = layersHtml;
+        wrapper.appendChild(dot);
+
+        heading.innerHTML = ''; 
+        heading.className = `neo-gooey-heading is-${originalTag}`;
+
+        words.forEach((word, index) => {
+          const span = doc.createElement('span');
+          span.className = 'neo-gooey-word';
+          span.style.transitionDelay = `${index * 0.08}s`;
+          span.innerText = word;
+          heading.appendChild(span);
+          heading.appendChild(doc.createTextNode(' '));
+        });
+
+        wrapper.appendChild(heading);
+      });
+
+      return { __html: doc.body.innerHTML };
+    } catch (e) {
+      console.error("Content parser failed", e);
+      return { __html: post.content.rendered };
+    }
+  }, [post, isLightMode]);
 
   const toggleBookmark = (id) => {
     if (savedArticles.includes(id)) {
@@ -113,28 +332,22 @@ const Post = () => {
 
   const handleShare = async () => {
     if (navigator.share) {
-      try {
-        await navigator.share({ title: post.title.rendered, url: window.location.href });
-      } catch (err) {
-        console.log('Share cancelled');
-      }
+      try { await navigator.share({ title: post.title.rendered, url: window.location.href }); } 
+      catch (err) { console.log('Share cancelled'); }
     } else {
-      navigator.clipboard.writeText(window.location.href);
-      alert('Link copied to clipboard!');
+      navigator.clipboard.writeText(window.location.href); alert('Link copied to clipboard!');
     }
   };
 
   const scrollCarousel = (dir) => {
-    if (scrollerRef.current) {
-      scrollerRef.current.scrollBy({ left: dir * 300, behavior: 'smooth' });
-    }
+    if (scrollerRef.current) scrollerRef.current.scrollBy({ left: dir * 300, behavior: 'smooth' });
   };
 
   const getFeaturedImage = (p) => {
     let img = p._embedded?.['wp:featuredmedia']?.[0]?.source_url;
     if (!img) {
       const match = p.content.rendered.match(/<img[^>]+src=["']([^"']+)["']/i);
-      img = match ? match[1] : 'https://images.unsplash.com/photo-1614729939124-032f0b56c9ce?q=80&w=800&auto=format&fit=crop';
+      img = match ? match[1] : null;
     }
     return img;
   };
@@ -156,13 +369,19 @@ const Post = () => {
     );
   }
 
-  if (error) return <div className="neo-layout-wrapper"><h2 style={{color: '#f43f5e', textAlign: 'center'}}>{error}</h2></div>;
+    if (error) {
+    return (
+      <div className="neo-layout-wrapper" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', marginTop: '40px' }}>
+        <RetroTVError message="Check Your Network :(" />
+      </div>
+    );
+  }
+
   if (!post) return null;
 
   const mainImage = getFeaturedImage(post);
-  const category = post._embedded?.['wp:term']?.[0]?.[0]?.name || 'Article';
-  const author = post._embedded?.author?.[0]?.name || 'Neohexane Team';
   const avatar = post._embedded?.author?.[0]?.avatar_urls?.['48'] || 'https://ui-avatars.com/api/?name=N&background=0D8ABC&color=fff';
+  const author = post._embedded?.author?.[0]?.name || 'Neohexane Team';
   const date = new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const subtitle = post.meta?.subtitle || post.excerpt.rendered.replace(/(<([^>]+)>)/gi, "");
   const references = post.meta?.references || null;
@@ -170,6 +389,14 @@ const Post = () => {
 
   return (
     <>
+      <svg aria-hidden="true" style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+        <defs>
+          <filter id="gooey-threshold" x="-50%" y="-50%" width="200%" height="200%" colorInterpolationFilters="sRGB">
+            <feColorMatrix in="SourceGraphic" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -9" result="goo" />
+          </filter>
+        </defs>
+      </svg>
+
       <button className="neo-desktop-theme-toggle" onClick={toggleTheme} aria-label="Toggle Theme">
         {isLightMode ? (
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path></svg>
@@ -180,13 +407,8 @@ const Post = () => {
 
       <div className="neo-layout-wrapper">
         <header className="neo-article-header">
-          <Link to="/articles" className="neo-article-cat">{category}</Link>
-          
           <div className="neo-title-row">
-            <h1 className="neo-article-title" dangerouslySetInnerHTML={{ __html: post.title.rendered }} />
-            <button className={`neo-desktop-bookmark-btn ${savedArticles.includes(post.id) ? 'saved' : ''}`} onClick={() => toggleBookmark(post.id)}>
-              <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
-            </button>
+            {dynamicTitle}
           </div>
 
           <p className="neo-article-subtitle" dangerouslySetInnerHTML={{ __html: subtitle }}></p>
@@ -204,7 +426,7 @@ const Post = () => {
           <main className="neo-main-content">
             {mainImage && <img src={mainImage} className="neo-featured-image" alt="Featured" />}
             
-            <article className="neo-post-content" dangerouslySetInnerHTML={{ __html: post.content.rendered }} />
+            <MemoizedArticleContent html={parsedContentHtml.__html} />
 
             {(references || keywords.length > 0) && (
               <div className="neo-article-subs">
@@ -232,111 +454,11 @@ const Post = () => {
             )}
           </main>
 
-          <aside className="neo-sidebar" id="neo-fixed-sidebar">
-            <div className="neo-sidebar-top-group">
-              
-              {/* PERIODIC TABLE WIDGET */}
-              <div className="neo-sidebar-box neo-pt-widget">
-                <h2 className="neo-sidebar-title">Discover the Elements</h2>
-                <svg className="neo-pt-svg" viewBox="0 0 324 190">
-                  {ptData.map((el, i) => {
-                    // FIX: el[2] is the column (X), el[1] is the row (Y)
-                    const x = el[2] * 18; 
-                    const y = el[1] * 20; 
-                    return (
-                      <g key={i}>
-                        <rect x={x} y={y} width="16" height="18" rx="2" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
-                        <text x={x + 8} y={y + 11.5} fontFamily="Arial, sans-serif" fontSize="8" fontWeight="bold" fill={el[3]} textAnchor="middle">{el[0]}</text>
-                      </g>
-                    );
-                  })}
-                </svg>
-
-                {/* BOHR ORBITAL ENGINE */}
-                <div className="bohr-container-side" onClick={() => setBohrIndex((bohrIndex + 1) % bohrElements.length)}>
-                  <div className="nucleus-side">
-                    <span>{bohrElements[bohrIndex].sym}</span>
-                    <small>{bohrElements[bohrIndex].sub}</small>
-                  </div>
-                  {bohrElements[bohrIndex].shells.map((electrons, sIdx) => {
-                    const size = 60 + (sIdx * 22);
-                    const speed = 8 + (sIdx * 2);
-                    const dir = (sIdx % 2 === 0) ? 'spin-side' : 'spin-side-ccw';
-                    
-                    return (
-                      <div key={sIdx} className="orbit-side" style={{ width: size, height: size }}>
-                        <div className="orbit-ring-side" style={{ animation: `${dir} ${speed}s linear infinite` }}>
-                          {Array.from({ length: electrons }).map((_, i) => {
-                            const angle = (i / electrons) * 2 * Math.PI;
-                            const cx = 50 + 50 * Math.cos(angle);
-                            const cy = 50 + 50 * Math.sin(angle);
-                            return <div key={i} className="electron-side" style={{ left: `${cx}%`, top: `${cy}%` }} />;
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <p className="neo-sidebar-pt-text">Dive deeper into our data environment. Explore the interactive Periodic Table to filter, sort, and analyze elements natively within the Neohexane framework.</p>
-                <div className="neo-btn-center-wrapper">
-                  <Link to="/periodic-table" className="learn-more">
-                    <span className="circle" aria-hidden="true"><span className="icon arrow"></span></span>
-                    <span className="button-text">View interactive Table</span>
-                  </Link>
-                </div>
-              </div>
-
-              {/* SIDEBAR CARDS */}
-              <div className="neo-desktop-sidebar-cards">
-                {relatedPosts.slice(0, 2).map(rp => (
-                  <article key={rp.id} className="neo-side-card">
-                    <section className="neo-side-card__hero" style={{ '--bg-img': `url('${getFeaturedImage(rp)}')` }}>
-                      <header className="neo-side-card__hero-header">
-                        <span>{rp._embedded?.['wp:term']?.[0]?.[0]?.name || 'Article'}</span>
-                        <button className={`neo-side-card__icon neo-side-card-bookmark ${savedArticles.includes(rp.id) ? 'saved' : ''}`} onClick={() => toggleBookmark(rp.id)}>
-                          <svg height="20" width="20" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" fill="none"><path d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" strokeLinejoin="round" strokeLinecap="round"></path></svg>
-                        </button>
-                      </header>
-                      <p className="neo-side-card__job-title" dangerouslySetInnerHTML={{ __html: rp.title.rendered.substring(0, 45) + '...' }} />
-                    </section>
-                    <footer className="neo-side-card__footer">
-                      <div className="neo-side-card__job-summary">
-                        <div className="neo-side-card__job"><p className="neo-side-card__job-subtitle">Read Insight</p></div>
-                      </div>
-                      <Link to={`/post/${rp.slug}`} className="neo-side-card__btn">READ</Link>
-                    </footer>
-                  </article>
-                ))}
-              </div>
-            </div>
-
-            <div className="neo-sidebar-bottom-group neo-desktop-newsletter">
-              <div className="neo-desktop-quote">
-                <div className={`neo-quote-wrapper ${quoteTheme}`}>
-                  <div className="neo-quote-card"></div>
-                  <div className="neo-quote-content">
-                    <div className="neo-quote-text">&ldquo;{quote[0]}&rdquo;</div>
-                    <div className="neo-quote-author">&mdash; {quote[1]}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="neo-sidebar-box neo-sidebar-newsletter">
-                <h2 className="neo-news-bold-title">Get our chemistry newsletter</h2>
-                <p className="neo-news-desc">Filter out the noise and nurture your inbox with analytical insights and molecular science.</p>
-                <div className="mailpoet_form_inner">
-                  <input type="email" className="mailpoet_text" placeholder="Email Address *" />
-                  <button className="mailpoet_submit">Subscribe</button>
-                </div>
-                <p className="neo-privacy">Your <Link to="/privacy">privacy</Link> is important to us</p>
-              </div>
-            </div>
-          </aside>
+          {/* Reserved slot for the future <ArticleSidebar /> Component */}
+          <ArticleSidebar />
         </div>
       </div>
 
-      {/* BOTTOM CAROUSEL */}
       {relatedPosts.length > 2 && (
         <section className="neo-scroller-section">
           <header className="neo-scroller-header">
@@ -364,8 +486,8 @@ const Post = () => {
       )}
 
       {/* MOBILE ACTION BAR */}
-      <div className="neo-mobile-action-bar">
-        <Link to="/articles" className="neo-action-btn"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></Link>
+      <div className={`neo-mobile-action-bar ${isScrolledDown ? 'hidden' : ''}`}>
+        <Link to="/archive" className="neo-action-btn"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></Link>
         <button className={`neo-action-btn ${savedArticles.includes(post.id) ? 'saved' : ''}`} onClick={() => toggleBookmark(post.id)}>
           <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
         </button>

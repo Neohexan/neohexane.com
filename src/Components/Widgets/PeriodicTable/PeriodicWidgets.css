@@ -1,0 +1,230 @@
+/* ==========================================
+   FLEXBOX SCROLL LOCK (CRITICAL FOR MOBILE)
+   ========================================== */
+.neo-pt-container-lock {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0; /* Forces parent flex/grid items to allow shrinking */
+    overflow: hidden; /* Clips any layout blowout */
+    box-sizing: border-box;
+}
+
+/* ==========================================
+   PERIODIC TABLE GRID
+   ========================================== */
+.neo-pt-scroll-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding: 10px 0 30px 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+.neo-pt-scroll-wrapper::-webkit-scrollbar {
+    height: 6px;
+}
+.neo-pt-scroll-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+.neo-pt-grid {
+    display: grid;
+    grid-template-columns: repeat(18, minmax(50px, 60px));
+    gap: 6px;
+    justify-content: start;
+    width: max-content; /* Forces grid to expand past the scroll wrapper */
+    padding: 0;
+    margin: 0;
+}
+
+/* Blinking Swipe Hint */
+.neo-pt-swipe-hint {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* Anchors the text strictly to the left */
+    padding-left: 8px; /* Adds breathing room next to Hydrogen */
+    font-family: monospace;
+    font-size: 11px;
+    color: #00FFCC;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    pointer-events: none;
+    animation: neoSoftPulse 2s ease-in-out infinite;
+}
+
+
+@keyframes neoSoftPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+}
+
+.neo-pt-element {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 4px;
+    padding: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    color: #666;
+    box-sizing: border-box;
+}
+
+.neo-pt-element.active-cat, .neo-pt-element:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: scale(1.1);
+    z-index: 10;
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.neo-pt-element.dimmed {
+    opacity: 0.2;
+    transform: scale(0.95);
+}
+
+.neo-pt-element .n { font-size: 9px; font-weight: 500; line-height: 1; }
+.neo-pt-element .s { font-size: 18px; font-weight: 700; text-align: center; margin-top: 2px; line-height: 1; transition: color 0.3s; }
+.neo-pt-element .nm { font-size: 7px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7; }
+
+.neo-pt-placeholder {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed rgba(255,255,255,0.06);
+    border-radius: 4px;
+    padding: 4px;
+    color: #666;
+    box-sizing: border-box;
+}
+.neo-pt-placeholder .s { font-size: 13px; font-weight: 700; color: #999; text-align: center; margin-top: 4px; }
+.neo-pt-placeholder .nm { font-size: 10px; text-align: center; margin-top: 2px; }
+
+/* ==========================================
+   BOHR SPIN MODEL
+   ========================================== */
+.neo-bohr-panel {
+    background: #0C101A;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.06);
+    padding: 30px;
+    color: #ffffff;
+}
+
+.neo-bohr-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+}
+.neo-bohr-header h3 {
+    font-size: 12px;
+    color: #999;
+    letter-spacing: 2px;
+    margin: 0;
+    font-weight: 600;
+}
+.neo-bohr-header button {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.06);
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.neo-bohr-container {
+    position: relative;
+    width: 280px;
+    height: 280px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.neo-nucleus {
+    width: 50px;
+    height: 50px;
+    background: radial-gradient(circle, #007AFF, #001F3F);
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 16px;
+    z-index: 10;
+    box-shadow: 0 0 20px rgba(0, 122, 255, 0.4);
+    line-height: 1;
+}
+.neo-nucleus small { font-size: 8px; font-weight: 400; margin-top: 2px; opacity: 0.8; }
+
+.neo-orbit {
+    position: absolute;
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.neo-orbit-ring {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    animation: bohrSpin linear infinite;
+}
+
+.neo-electron {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #5AC8FA;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #5AC8FA;
+    transform: translate(-50%, -50%);
+}
+
+@keyframes bohrSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ==========================================
+   MOBILE SQUEEZE
+   ========================================== */
+@media (max-width: 900px) {
+    .neo-pt-grid {
+        /* Hardcode the width so the grid is guaranteed to be wider than the phone screen */
+        grid-template-columns: repeat(18, 42px);
+        gap: 4px;
+        width: max-content; 
+    }
+    
+    .neo-pt-element { padding: 3px; }
+    .neo-pt-element .n { font-size: 7.5px; }
+    .neo-pt-element .s { font-size: 14px; margin-top: 3px; }
+    .neo-pt-element .nm { font-size: 5px; }
+    
+    .neo-pt-placeholder .s { font-size: 11px; margin-top: 2px; }
+    .neo-pt-placeholder .nm { font-size: 7px; }
+    
+    .neo-pt-swipe-hint { font-size: 10px; }
+}
