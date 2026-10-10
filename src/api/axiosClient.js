@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Your existing Axios instance creation
 const api = axios.create({
-  baseURL: 'https://neohexane.com/wp-json/wp/v2', // Adjust to your actual URL
+  baseURL: 'https://backspace.neohexane.com/api', // Adjust to your actual URL
   headers: {
     'Content-Type': 'application/json',
   },

@@ -4,7 +4,7 @@ import api from '../../../api/axiosClient';
 import './Single.css';
 import ArticleSidebar from '../../Widgets/ArticleSidebar';
 import RetroTVError from '../../Widgets/RetroTVError/RetroTVError'; 
-
+import { MathJaxContext, MathJax } from 'better-react-mathjax';
 
 // ==========================================
 // 1. REUSABLE TAG FAN COMPONENT (Main H1)
@@ -61,7 +61,15 @@ const WordReveal = ({ text, baseDelay, wordInterval = 0.12, canReveal = true, cl
 
 // ==========================================
 // 3. MEMOIZED CONTENT FIREWALL
-// ==========================================
+//==========================================
+// 1. Define the config object to enable single dollar signs
+const mathJaxConfig = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']]
+  }
+};
+
 const MemoizedArticleContent = React.memo(({ html }) => {
   const contentRef = useRef(null);
 
@@ -93,13 +101,17 @@ const MemoizedArticleContent = React.memo(({ html }) => {
     wrappers.forEach(w => observer.observe(w));
     return () => observer.disconnect();
   }, [html]); 
-
+  
   return (
-    <article 
-      ref={contentRef}
-      className="neo-post-content" 
-      dangerouslySetInnerHTML={{ __html: html }} 
-    />
+    <MathJaxContext>
+      <MathJax dynamic>
+        <article 
+          ref={contentRef}
+          className="neo-post-content" 
+          dangerouslySetInnerHTML={{ __html: html }} 
+        />
+      </MathJax>
+    </MathJaxContext>
   );
 });
 
@@ -164,17 +176,18 @@ const Post = () => {
     setCanReveal(false); 
     window.scrollTo(0, 0); 
 
-    api.get(`/posts?slug=${slug}&_embed`)
+    // Payload CMS API calls
+    api.get(`/articles?where[slug][equals]=${slug}`)
       .then((res) => {
-        if (res.data && res.data.length > 0) {
-          setPost(res.data[0]);
-          return api.get(`/posts?per_page=10&exclude=${res.data[0].id}&_embed`);
+        if (res.data && res.data.docs && res.data.docs.length > 0) {
+          setPost(res.data.docs[0]);
+          return api.get(`/articles?limit=10&where[id][not_equals]=${res.data.docs[0].id}`);
         } else {
           throw new Error("Article not found in database.");
         }
       })
       .then((res) => {
-        if(res) setRelatedPosts(res.data);
+        if(res && res.data && res.data.docs) setRelatedPosts(res.data.docs);
         setLoading(false);
         setTimeout(() => setCanReveal(true), 150);
       })
@@ -188,10 +201,10 @@ const Post = () => {
   // BULLETPROOF H1 TITLE ENGINE
   // ==========================================
   const dynamicTitle = useMemo(() => {
-    if (!post) return null;
+    if (!post || !post.title) return null;
 
     const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = post.title.rendered;
+    tempDiv.innerHTML = post.title;
     const cleanText = tempDiv.textContent || tempDiv.innerText || "";
     const words = cleanText.trim().split(/\s+/).filter(w => w.trim().length > 0);
 
@@ -260,11 +273,11 @@ const Post = () => {
   // PURE HTML GOOEY + 5-COLOR ANIMATED DOT PARSER
   // ==========================================
   const parsedContentHtml = useMemo(() => {
-    if (!post) return { __html: '' };
+    if (!post || !post.content) return { __html: '' };
 
     try {
       const parser = new DOMParser();
-      const doc = parser.parseFromString(post.content.rendered, 'text/html');
+      const doc = parser.parseFromString(post.content, 'text/html');
       const headings = doc.querySelectorAll('h2, h3, h4, h5, h6');
 
       const dotPalettes = isLightMode ? [
@@ -318,7 +331,7 @@ const Post = () => {
       return { __html: doc.body.innerHTML };
     } catch (e) {
       console.error("Content parser failed", e);
-      return { __html: post.content.rendered };
+      return { __html: post.content };
     }
   }, [post, isLightMode]);
 
@@ -332,7 +345,7 @@ const Post = () => {
 
   const handleShare = async () => {
     if (navigator.share) {
-      try { await navigator.share({ title: post.title.rendered, url: window.location.href }); } 
+      try { await navigator.share({ title: post.title, url: window.location.href }); } 
       catch (err) { console.log('Share cancelled'); }
     } else {
       navigator.clipboard.writeText(window.location.href); alert('Link copied to clipboard!');
@@ -344,12 +357,10 @@ const Post = () => {
   };
 
   const getFeaturedImage = (p) => {
-    let img = p._embedded?.['wp:featuredmedia']?.[0]?.source_url;
-    if (!img) {
-      const match = p.content.rendered.match(/<img[^>]+src=["']([^"']+)["']/i);
-      img = match ? match[1] : null;
-    }
-    return img;
+    // Extract first image from the HTML content as fallback until a Media collection is configured
+    if (!p.content) return null;
+    const match = p.content.match(/<img[^>]+src=["']([^"']+)["']/i);
+    return match ? match[1] : null;
   };
 
   if (loading) {
@@ -369,7 +380,7 @@ const Post = () => {
     );
   }
 
-    if (error) {
+  if (error) {
     return (
       <div className="neo-layout-wrapper" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', marginTop: '40px' }}>
         <RetroTVError message="Check Your Network :(" />
@@ -380,12 +391,14 @@ const Post = () => {
   if (!post) return null;
 
   const mainImage = getFeaturedImage(post);
-  const avatar = post._embedded?.author?.[0]?.avatar_urls?.['48'] || 'https://ui-avatars.com/api/?name=N&background=0D8ABC&color=fff';
-  const author = post._embedded?.author?.[0]?.name || 'Neohexane Team';
-  const date = new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  const subtitle = post.meta?.subtitle || post.excerpt.rendered.replace(/(<([^>]+)>)/gi, "");
-  const references = post.meta?.references || null;
-  const keywords = post._embedded?.['wp:term']?.[1] || [];
+  const avatar = 'https://ui-avatars.com/api/?name=N&background=0D8ABC&color=fff';
+  const author = 'Neohexane Team'; // Hardcoded until user relationships are set up
+  const date = new Date(post.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  
+  // Directly pull Payload string and array fields
+  const subtitle = post.subtitle || "";
+  const references = post.references || [];
+  const keywords = post.tags || [];
 
   return (
     <>
@@ -411,7 +424,7 @@ const Post = () => {
             {dynamicTitle}
           </div>
 
-          <p className="neo-article-subtitle" dangerouslySetInnerHTML={{ __html: subtitle }}></p>
+          {subtitle && <p className="neo-article-subtitle" dangerouslySetInnerHTML={{ __html: subtitle }}></p>}
           
           <div className="neo-article-meta">
             <span className="neo-by-text">BY</span>
@@ -428,24 +441,35 @@ const Post = () => {
             
             <MemoizedArticleContent html={parsedContentHtml.__html} />
 
-            {(references || keywords.length > 0) && (
+            {(references.length > 0 || keywords.length > 0) && (
               <div className="neo-article-subs">
-                {references && (
+                {references.length > 0 && (
                   <details className="neo-sub-details">
                     <summary className="neo-sub-summary">
                       <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg> References
                     </summary>
-                    <div className="neo-sub-content" dangerouslySetInnerHTML={{ __html: references }} />
+                    <div className="neo-sub-content">
+                      <ul>
+                        {references.map((ref, i) => (
+                          <li key={i}>
+                            <a href={ref.url} target="_blank" rel="noopener noreferrer">{ref.sourceName}</a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </details>
                 )}
+                
                 {keywords.length > 0 && (
                   <details className="neo-sub-details">
                     <summary className="neo-sub-summary">
                       <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg> Keywords
                     </summary>
                     <div className="neo-sub-content neo-keywords-content">
-                      {keywords.map(tag => (
-                        <Link key={tag.id} to={`/articles/?search=${tag.name}`} className="neo-keyword-tag">{tag.name}</Link>
+                      {keywords.map((tag, i) => (
+                        <Link key={i} to={`/articles/?search=${tag.tagName}`} className="neo-keyword-tag">
+                          {tag.tagName}
+                        </Link>
                       ))}
                     </div>
                   </details>
@@ -454,12 +478,11 @@ const Post = () => {
             )}
           </main>
 
-          {/* Reserved slot for the future <ArticleSidebar /> Component */}
           <ArticleSidebar />
         </div>
       </div>
 
-      {relatedPosts.length > 2 && (
+      {relatedPosts.length > 0 && (
         <section className="neo-scroller-section">
           <header className="neo-scroller-header">
             <span className="neo-scroller-header-muted">Further Reading</span>
@@ -467,10 +490,10 @@ const Post = () => {
           </header>
           <div className="neo-scroller-wrapper">
             <div className="neo-scroller-container" ref={scrollerRef}>
-              {relatedPosts.slice(2).map(rp => (
+              {relatedPosts.map(rp => (
                 <div key={rp.id} className="neo-scroller-card">
-                  <img src={getFeaturedImage(rp)} alt={rp.title.rendered} />
-                  <h3><Link to={`/post/${rp.slug}`} dangerouslySetInnerHTML={{ __html: rp.title.rendered }} /></h3>
+                  {getFeaturedImage(rp) && <img src={getFeaturedImage(rp)} alt={rp.title} />}
+                  <h3><Link to={`/post/${rp.slug}`}>{rp.title}</Link></h3>
                   <Link to={`/post/${rp.slug}`} className="neo-read-more-arrow">
                     Read Article <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                   </Link>
