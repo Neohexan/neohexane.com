@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { GoogleLogin, googleLogout } from '@react-oauth/google';
-import api from '../../../api/axiosClient';
+import api from '../../../api/axiosClient'; // Assuming this is your Axios instance
 import './Header.css';
+
+// Point directly to your remote Payload server
+const API_URL = 'https://backspace.neohexane.com/api'; 
+
 
 const Header = () => {
   const [activeMenu, setActiveMenu] = useState(null);
@@ -30,9 +34,10 @@ const Header = () => {
     }
   }, [activeMenu]);
 
+  // Load session from browser storage on mount
   useEffect(() => {
-    const token = localStorage.getItem('neo_token');
-    const storedUser = localStorage.getItem('neo_user');
+    const token = localStorage.getItem('payload-token');
+    const storedUser = localStorage.getItem('payload-user');
     
     if (token && storedUser) {
       try {
@@ -41,24 +46,26 @@ const Header = () => {
         setIsLoggedIn(true);
       } catch (e) {
         console.error("Corrupted local storage data. Clearing session.");
-        localStorage.removeItem('neo_token');
-        localStorage.removeItem('neo_user');
+        localStorage.removeItem('payload-token');
+        localStorage.removeItem('payload-user');
       }
     }
   }, []);
 
+  // Fetch the user's populated bookmarks from Payload CMS
   useEffect(() => {
     const fetchBookmarks = async () => {
       if (!isLoggedIn) return;
       try {
-        const token = localStorage.getItem('neo_token');
-        const response = await api.get('/neohexane/v1/bookmarks', {
-          baseURL: 'https://neohexane.com/wp-json',
-          headers: { Authorization: `Bearer ${token}` }
+        const token = localStorage.getItem('payload-token');
+        
+        // Payload's built-in /me endpoint returns the full user object
+        const response = await api.get(`${API_URL}/users/me`, {
+          headers: { Authorization: `JWT ${token}` } // Payload uses JWT prefix for auth headers
         });
         
-        if (response.data && response.data.bookmarks) {
-          setSavedArticles(response.data.bookmarks);
+        if (response.data?.user?.bookmarks) {
+          setSavedArticles(response.data.user.bookmarks);
         }
       } catch (error) {
         console.error("Failed to fetch bookmarks:", error);
@@ -68,25 +75,36 @@ const Header = () => {
     fetchBookmarks();
   }, [isLoggedIn]);
 
+  // Handle the Google popup success response
   const handleSuccess = async (credentialResponse) => {
     try {
       const googleToken = credentialResponse.credential;
-      const response = await api.post('/neohexane/v1/google-login', 
-        { token: googleToken },
-        { baseURL: 'https://neohexane.com/wp-json' }
-      );
+      
+      // Send Google token to our custom Payload endpoint
+      const response = await api.post(`${API_URL}/users/google-login`, { 
+        token: googleToken 
+      });
 
+      // Map Payload's user database fields to UI state
       const userInfo = {
+        id: response.data.user.id,
         name: response.data.user.name,
         email: response.data.user.email,
-        avatarUrl: response.data.user.avatar || `https://ui-avatars.com/api/?name=${response.data.user.name.charAt(0)}&background=0D8ABC&color=fff`
+        avatarUrl: response.data.user.profilePicture || `https://ui-avatars.com/api/?name=${response.data.user.name.charAt(0)}&background=0D8ABC&color=fff`
       };
 
-      localStorage.setItem('neo_token', response.data.token);
-      localStorage.setItem('neo_user', JSON.stringify(userInfo));
+      // Save the native Payload token
+      localStorage.setItem('payload-token', response.data.token);
+      localStorage.setItem('payload-user', JSON.stringify(userInfo));
       
       setUser(userInfo);
       setIsLoggedIn(true);
+      
+      // If the custom endpoint returned bookmarks instantly, populate them
+      if (response.data.user.bookmarks) {
+        setSavedArticles(response.data.user.bookmarks);
+      }
+      
       closeMenus(); 
     } catch (error) {
       console.error("Backend authentication failed:", error);
@@ -95,8 +113,8 @@ const Header = () => {
 
   const handleLogout = () => {
     googleLogout(); 
-    localStorage.removeItem('neo_token'); 
-    localStorage.removeItem('neo_user'); 
+    localStorage.removeItem('payload-token'); 
+    localStorage.removeItem('payload-user'); 
     
     setIsLoggedIn(false);
     setUser({ name: "", email: "", avatarUrl: "" });
@@ -156,10 +174,8 @@ const Header = () => {
         onClick={closeMenus}
       ></div>
 
-      {/* Attaches the nh-header-archive class to force position: sticky */}
       <header className={`nh-floating-header ${isScrolled ? 'is-scrolled' : ''} ${isArchivePage ? 'nh-header-archive' : ''}`}>
         
-        {/* Blocks the hidden-pill animation specifically when isArchivePage is true */}
         <div className={`nh-segment-left nh-glass-pill ${!isScrollingUp && !isArchivePage ? 'hidden-pill' : ''}`}>
           <div className="neo-header-item">
             <button 
@@ -227,7 +243,8 @@ const Header = () => {
                   <ul className="nh-bookmark-scroll-list">
                     {savedArticles.map(article => (
                       <li key={article.id}>
-                        <Link to={article.url} onClick={closeMenus}>
+                        {/* Payload returns slugs for linked articles, not full URLs */}
+                        <Link to={`/article/${article.slug}`} onClick={closeMenus}>
                           <span className="nh-article-title">{article.title}</span>
                           <span className="nh-read-article">READ ARTICLE &rarr;</span>
                         </Link>

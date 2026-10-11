@@ -1,23 +1,20 @@
 import axios from 'axios';
 
-// Your existing Axios instance creation
 const api = axios.create({
-  baseURL: 'https://backspace.neohexane.com/api', // Adjust to your actual URL
+  baseURL: 'https://backspace.neohexane.com/api', 
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// --- ADD THIS INTERCEPTOR ---
-// This intercepts every request before it leaves your app
 api.interceptors.request.use(
   (config) => {
-    // Look for the token we saved during the Google Login
-    const token = localStorage.getItem('neo_token');
+    // 1. Look for the NEW Payload token
+    const token = localStorage.getItem('payload-token');
     
-    // If the token exists, attach it to the Authorization header
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      // 2. Use the 'JWT' prefix required by Payload CMS
+      config.headers.Authorization = `JWT ${token}`;
     }
     
     return config;

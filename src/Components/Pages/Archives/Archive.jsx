@@ -4,6 +4,50 @@ import api from '../../../api/axiosClient';
 import logo from '../../../assets/logo.jpg';
 import './Archive.css';
 
+// --- AUTO-CAROUSEL COMPONENT ---
+const ImageCarousel = ({ images, title }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    if (images.length <= 1) return;
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % images.length);
+    }, 3000); 
+    
+    return () => clearInterval(timer);
+  }, [images]);
+
+  if (images.length <= 1) {
+    return <img src={images[0]} className="discover-single-image" alt={title} loading="lazy" />;
+  }
+
+  return (
+    <>
+      <div className="discover-image-slider" style={{ position: 'relative', width: '100%', height: '100%' }}>
+        {images.map((img, idx) => (
+          <img 
+            key={idx} 
+            src={img} 
+            alt={`${title} - Slide ${idx + 1}`} 
+            loading="lazy" 
+            style={{
+              position: idx === 0 ? 'relative' : 'absolute',
+              top: 0, left: 0, width: '100%', height: '100%', 
+              objectFit: 'cover',
+              opacity: currentIndex === idx ? 1 : 0,
+              transition: 'opacity 0.8s ease-in-out'
+            }}
+          />
+        ))}
+      </div>
+      <div className="discover-slider-indicator" style={{ zIndex: 2, position: 'absolute', bottom: '10px', right: '10px' }}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+        {currentIndex + 1} / {images.length}
+      </div>
+    </>
+  );
+};
+
 const Archive = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
@@ -12,44 +56,40 @@ const Archive = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // Now tracks IDs synced from the database
   const [savedArticles, setSavedArticles] = useState([]);
 
   const handleSearchChange = (e) => {
     const val = e.target.value;
-    if (val) {
-      setSearchParams({ search: val }, { replace: true });
-    } else {
-      setSearchParams({}, { replace: true });
-    }
+    if (val) setSearchParams({ search: val }, { replace: true });
+    else setSearchParams({}, { replace: true });
   };
 
-  // --- SYNC BOOKMARKS FROM BACKEND ---
+  // --- SYNC BOOKMARKS ---
   const fetchUserBookmarks = async () => {
-    const token = localStorage.getItem('neo_token');
-    if (!token) return;
+    const token = localStorage.getItem('payload-token');
+    if (!token) {
+      setSavedArticles([]);
+      return;
+    }
 
     try {
-      const response = await api.get('/neohexane/v1/bookmarks', {
-        baseURL: 'https://neohexane.com/wp-json',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (response.data && response.data.bookmarks) {
-        // Extract just the IDs for the Archive card highlighting logic
-        setSavedArticles(response.data.bookmarks.map(b => b.id));
+      const response = await api.get('/users/me');
+      
+      if (response.data?.user?.bookmarks) {
+        // Extract IDs and ensure they are ready for comparison
+        const bkmkIds = response.data.user.bookmarks.map(b => 
+          typeof b === 'object' && b !== null ? b.id : b
+        );
+        setSavedArticles(bkmkIds);
       }
     } catch (err) {
       console.error("Failed to sync archive bookmarks:", err);
     }
   };
 
-  // Fetch bookmarks on mount and listen for updates from the Header
   useEffect(() => {
     fetchUserBookmarks();
-    
-    // Listen for global bookmark changes (e.g., if user clears bookmarks in header)
     window.addEventListener('neoBookmarkUpdated', fetchUserBookmarks);
-    // Listen for login success from Header
     window.addEventListener('neoLoginSuccess', fetchUserBookmarks);
     
     return () => {
@@ -58,67 +98,75 @@ const Archive = () => {
     };
   }, []);
 
+  // --- FETCH ARTICLES ---
   useEffect(() => {
-    api.get('/posts?_embed&per_page=100')
+    api.get('/articles?limit=100')
       .then((response) => {
-        const fetchedArticles = response.data.map(post => {
-          const categories = post._embedded?.['wp:term']?.[0] || [];
-          const catName = categories.length > 0 ? categories[0].name : 'Article';
-          
-          const authorObj = post._embedded?.author?.[0];
-          const author = authorObj?.name || 'Neohexane';
-          const avatar = authorObj?.avatar_urls?.['96'] || authorObj?.avatar_urls?.['48'] || `https://ui-avatars.com/api/?name=${author.charAt(0)}&background=0D8ABC&color=fff`;
-          
-          let featuredImg = post._embedded?.['wp:featuredmedia']?.[0]?.source_url;
-          const contentString = post.content.rendered || '';
-
-          const imgRegex = /<img[^>]+src=["']([^"']+)["']/gi;
+        const fetchedDocs = response.data.docs || [];
+        
+        const formattedArticles = fetchedDocs.map(doc => {
           let extractedImages = [];
-          let match;
+          const extractImageUrls = (node) => {
+            if (!node) return;
+            if (node.type === 'upload' && node.value?.url) extractedImages.push(node.value.url);
+            if (node.type === 'upload' && node.url) extractedImages.push(node.url);
+            if (typeof node === 'string') {
+              const imgRegex = /<img[^>]+src=["']([^"']+)["']/gi;
+              let match;
+              while ((match = imgRegex.exec(node)) !== null) extractedImages.push(match[1]);
+            }
+            if (Array.isArray(node.children)) node.children.forEach(extractImageUrls);
+            if (Array.isArray(node.root?.children)) node.root.children.forEach(extractImageUrls);
+          };
           
-          while ((match = imgRegex.exec(contentString)) !== null) {
-            extractedImages.push(match[1]);
-          }
+          extractImageUrls(doc.content);
 
           let finalImages = [];
-          if (featuredImg) finalImages.push(featuredImg);
+          const featImgUrl = doc.featuredImage?.url || (typeof doc.featuredImage === 'string' ? doc.featuredImage : null);
+          
+          if (featImgUrl) finalImages.push(featImgUrl);
           
           extractedImages.forEach(img => {
-            if (!finalImages.includes(img)) {
-              finalImages.push(img);
-            }
+            if (!finalImages.includes(img)) finalImages.push(img);
           });
 
           if (finalImages.length === 0) {
             finalImages.push('https://images.unsplash.com/photo-1614729939124-032f0b56c9ce?q=80&w=800&auto=format&fit=crop');
           }
 
-          const cleanTextContent = contentString
-            .replace(/<[^>]*>?/gm, ' ') 
-            .replace(/\s+/g, ' ')       
-            .toLowerCase();             
+          let plainText = "";
+          const extractText = (node) => {
+            if (typeof node === 'string') plainText += ` ${node}`;
+            else if (typeof node === 'object' && node !== null) Object.values(node).forEach(extractText);
+          };
+          extractText(doc.content);
+          
+          const catName = doc.category?.title || doc.categories?.[0]?.title || 'Article';
+          const author = doc.author?.name || 'Neohexane';
+          const avatar = doc.author?.profilePicture || `https://ui-avatars.com/api/?name=${author.charAt(0)}&background=0D8ABC&color=fff`;
 
-          const dateObj = new Date(post.date);
+          const dateObj = new Date(doc.createdAt);
           const now = new Date();
-          const diffTime = Math.abs(now - dateObj);
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          const diffDays = Math.ceil(Math.abs(now - dateObj) / (1000 * 60 * 60 * 24));
           const timeAgo = diffDays > 30 ? dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : `${diffDays}d`;
 
+          const searchableContent = `${doc.title} ${catName} ${plainText}`.toLowerCase().replace(/[^a-z0-9 ]/g, '');
+
           return {
-            id: post.id,
-            title: post.title.rendered,
-            slug: post.slug,
-            link: `/article/${post.slug}`,
+            id: doc.id,
+            title: doc.title,
+            slug: doc.slug,
+            link: `/article/${doc.slug}`,
             cat: catName,
             images: finalImages, 
             author: author,
             avatar: avatar,
             timeAgo: timeAgo,
-            searchableContent: cleanTextContent 
+            searchableContent: searchableContent 
           };
         });
 
-        setArticles(fetchedArticles);
+        setArticles(formattedArticles);
         setLoading(false);
       })
       .catch((err) => {
@@ -127,44 +175,51 @@ const Archive = () => {
       });
   }, []);
 
-  // --- API DRIVEN BOOKMARK TOGGLE ---
+  // --- TOGGLE BOOKMARK ---
   const toggleBookmark = async (e, id) => {
     e.preventDefault();
     e.stopPropagation();
     
-    const token = localStorage.getItem('neo_token');
+    const token = localStorage.getItem('payload-token');
+    const storedUser = localStorage.getItem('payload-user');
     
-    // If logged out, fire event to open Header Auth Window
-    if (!token) {
+    if (!token || !storedUser) {
       window.dispatchEvent(new CustomEvent('neoOpenAuthMenu'));
       return;
     }
 
-    // Optimistic UI Update (Instant visual feedback)
-    const isSaved = savedArticles.includes(id);
-    if (isSaved) {
-      setSavedArticles(prev => prev.filter(savedId => savedId !== id));
-    } else {
-      setSavedArticles(prev => [...prev, id]);
+    let user;
+    try {
+      user = JSON.parse(storedUser);
+    } catch (err) {
+      console.error("Session corrupted, logging out.");
+      return;
     }
 
-    // Backend Sync
+    // FIX 1: Bulletproof type-matching (Stringify everything for comparison)
+    const targetId = String(id);
+    const isSaved = savedArticles.some(savedId => String(savedId) === targetId);
+    
+    // Create new array using the exact original types to prevent Payload DB errors
+    const updatedBookmarks = isSaved 
+      ? savedArticles.filter(savedId => String(savedId) !== targetId)
+      : [...savedArticles, id];
+
+    // FIX 2: Store previous state cleanly for reverting
+    const previousBookmarks = [...savedArticles];
+
+    // Optimistic UI Update
+    setSavedArticles(updatedBookmarks);
+
     try {
-      await api.post('/neohexane/v1/bookmarks/toggle', 
-        { post_id: id },
-        { 
-          baseURL: 'https://neohexane.com/wp-json',
-          headers: { Authorization: `Bearer ${token}` } 
-        }
-      );
+      // FIX 3: Removed manual Authorization headers (axiosClient handles this now)
+      await api.patch(`/users/${user.id}`, { bookmarks: updatedBookmarks });
       
-      // Tell the Header to refresh its dropdown list
       window.dispatchEvent(new CustomEvent('neoBookmarkUpdated'));
     } catch (error) {
-      console.error("Failed to sync bookmark with database", error);
-      // Revert optimistic update on failure
-      if (isSaved) setSavedArticles(prev => [...prev, id]);
-      else setSavedArticles(prev => prev.filter(savedId => savedId !== id));
+      console.error("Failed to sync bookmark with Payload database", error);
+      // Revert to exact previous state on failure
+      setSavedArticles(previousBookmarks);
     }
   };
 
@@ -176,9 +231,7 @@ const Archive = () => {
     if (navigator.share) {
       try {
         await navigator.share({ title: title, url: shareUrl });
-      } catch (err) {
-        console.log('Share window closed or failed', err);
-      }
+      } catch (err) {}
     } else {
       navigator.clipboard.writeText(shareUrl);
       alert('Link copied to clipboard!');
@@ -189,8 +242,7 @@ const Archive = () => {
 
   const filteredArticles = articles.filter(art => {
     if (searchTerms.length === 0) return true;
-    const combinedText = `${art.title} ${art.cat} ${art.searchableContent}`.toLowerCase();
-    return searchTerms.every(term => combinedText.includes(term));
+    return searchTerms.every(term => art.searchableContent.includes(term));
   });
 
   return (
@@ -222,28 +274,14 @@ const Archive = () => {
         {!loading && filteredArticles.length === 0 && <p className="discover-empty">No results found.</p>}
 
         {filteredArticles.map(art => {
-          const isSaved = savedArticles.includes(art.id);
-          const hasMultipleImages = art.images.length > 1;
+          // Explicit string coercion for the UI check as well
+          const isSaved = savedArticles.some(savedId => String(savedId) === String(art.id));
 
           return (
             <Link to={art.link} className="discover-card" key={art.id}>
               
-              <div className="discover-media-container">
-                {hasMultipleImages ? (
-                  <>
-                    <div className="discover-image-slider">
-                      {art.images.map((img, idx) => (
-                        <img key={idx} src={img} alt={`Slide ${idx + 1}`} loading="lazy" />
-                      ))}
-                    </div>
-                    <div className="discover-slider-indicator">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                      1 / {art.images.length}
-                    </div>
-                  </>
-                ) : (
-                  <img src={art.images[0]} className="discover-single-image" alt={art.title} loading="lazy" />
-                )}
+              <div className="discover-media-container" style={{ position: 'relative' }}>
+                <ImageCarousel images={art.images} title={art.title} />
               </div>
 
               <div className="discover-content">
@@ -261,7 +299,6 @@ const Archive = () => {
                     <button className="discover-action-btn" onClick={(e) => handleShare(e, art.title, art.link)}>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
                     </button>
-                    {/* Dynamic Saved State */}
                     <button className={`discover-action-btn ${isSaved ? 'saved' : ''}`} onClick={(e) => toggleBookmark(e, art.id)}>
                       <svg viewBox="0 0 24 24" fill={isSaved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
                     </button>

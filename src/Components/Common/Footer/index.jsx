@@ -1,6 +1,7 @@
 import React from 'react';
 import './style.css'; 
 import { Link } from 'react-router-dom';
+import logo from '../../../assets/logo.jpg';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -11,7 +12,7 @@ const Footer = () => {
         {/* Left Side: Brand and Copyright */}
         <div className="neo-footer-brand">
           <img 
-            src="http://neohexane.com/wp-content/uploads/2026/07/IMG_20210807_150534-1.jpg" 
+            src={logo} 
             alt="Neohexane Logo" 
             className="neo-footer-logo" 
             loading="lazy" 
