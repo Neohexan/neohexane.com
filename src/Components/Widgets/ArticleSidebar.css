@@ -2,7 +2,6 @@
    SIDEBAR LAYOUT & STRICT ANCHORING
    ========================================== */
 .neo-sidebar { 
-    /* Remove sticky positioning and forced heights so it matches the article length */
     display: flex; 
     flex-direction: column; 
     height: 100%; 
@@ -10,13 +9,11 @@
 
 /* 1. TOP GROUP (Periodic Table + Bohr) */
 .neo-sidebar-top-group { 
-    /* Permanently anchors next to the 1st paragraph */
     flex-shrink: 0; 
 }
 
 /* 2. MIDDLE GROUP (The elastic gap) */
 .neo-sidebar-middle-group {
-    /* Expands to consume all empty space, shoving the bottom group down */
     flex-grow: 1; 
     display: flex;
     flex-direction: column;
@@ -30,10 +27,8 @@
     flex-direction: column; 
     gap: 24px; 
     flex-shrink: 0; 
-    /* Forces this group to stay aligned with the absolute bottom of the article */
     margin-top: auto; 
 }
-
 
 /* ==========================================
    UNIFIED PERIODIC + BOHR WIDGET
@@ -75,58 +70,94 @@ body.neo-light-mode .neo-pt-widget {
 }
 
 /* ==========================================
-   MOBILE RESPONSIVENESS
+   MOBILE RESPONSIVENESS (STRICTLY MOBILE)
    ========================================== */
 @media (max-width: 900px) {
     .neo-sidebar { 
         height: auto; 
         position: static;
-        gap: 40px;
+        gap: 0 !important; 
+        /* Swallows the 40px margin and 60px padding from the main layout wrapper */
+        margin-bottom: -100px !important; 
     }
     
     .neo-sidebar-middle-group {
-        padding: 0;
-        overflow-y: visible;
+        display: none !important;
     }
 
-        /* Change from center to stretch so elements can expand fully */
     .neo-sidebar-bottom-group {
         align-items: stretch; 
         width: 100%;
-        gap: 0 !important; /* This completely removes the vertical space between the Quote and Newsletter */
+        gap: 0 !important; 
     }
 
-
-    /* Break out of the 340px cap AND the layout's 24px side padding */
+    /* THE BULLETPROOF FULL-BLEED HACK */
+    .neo-sidebar-top-group,
     .neo-sidebar-widget-wrapper {
-        width: 100vw;
-        max-width: 100vw; 
-        margin-left: -24px; /* Pulls the widget to the absolute left edge of the screen */
+        width: 100vw !important;
+        max-width: 100vw !important; 
+        position: relative !important;
+        left: 50% !important;
+        right: 50% !important;
+        margin-left: -50vw !important;
+        margin-right: -50vw !important;
         display: flex;
+        flex-direction: column;
     }
 
-    /* Force the actual widgets to expand edge-to-edge */
+    .neo-sidebar-top-group > *,
     .neo-sidebar-widget-wrapper > * {
         width: 100% !important;
         max-width: 100% !important;
         margin: 0 !important;
         box-sizing: border-box !important;
-        border-radius: 0 !important; /* Removes rounded corners so it sits perfectly flush with the screen edges */
+        border-radius: 0 !important; 
+        border-left: none !important;
+        border-right: none !important;
     }
+
+    /* EQUALIZED PADDING */
+    .neo-pt-widget {
+        padding: 24px 20px !important; 
+    }
+    
+    /* RESTORED: Locks the table inside the dark widget and enables horizontal scrolling */
+    .neo-pt-scroll-wrapper {
+        max-width: 100% !important;
+        width: 100% !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        -webkit-overflow-scrolling: touch !important;
+        padding-bottom: 15px !important;
+        display: block !important;
+    }
+
+    /* RESTORED: Scales the actual periodic table elements down to fit the screen */
+    .neo-pt-grid {
+        display: grid !important;
+        grid-template-columns: repeat(18, 42px) !important;
+        gap: 4px !important;
+        width: max-content !important; 
+    }
+
+    .neo-pt-element { padding: 3px !important; }
+    .neo-pt-element .n { font-size: 7.5px !important; }
+    .neo-pt-element .s { font-size: 14px !important; margin-top: 3px !important; }
+    .neo-pt-element .nm { font-size: 5px !important; }
+    
+    .neo-pt-placeholder .s { font-size: 11px !important; margin-top: 2px !important; }
+    .neo-pt-placeholder .nm { font-size: 7px !important; }
 }
 
-
 /* ==========================================
-   DESKTOP WIDGET EXPANSION
+   DESKTOP WIDGET EXPANSION (100% UNTOUCHED)
    ========================================== */
 @media (min-width: 901px) {
-    /* 1. Pull the top group left, but leave a 15px buffer so it doesn't touch the line */
     .neo-sidebar-top-group {
         margin-left: -25px; 
         width: calc(100% + 25px);
     }
     
-    /* 2. Keep the reduced internal padding so the Periodic Table stays wide */
     .neo-pt-widget {
         padding: 24px 10px !important;
     }

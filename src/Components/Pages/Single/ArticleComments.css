@@ -1,0 +1,331 @@
+.neo-comments-section {
+    margin-top: 50px;
+    padding-top: 30px;
+    border-top: 1px solid var(--neo-border);
+    font-family: 'Inter', sans-serif;
+    color: var(--neo-text-main);
+}
+
+/* Kills the blue mobile tap highlight on all comment elements */
+.neo-comments-section * {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Kills the default browser focus ring on buttons */
+.neo-comments-section button:focus,
+.neo-comments-section textarea:focus {
+    outline: none;
+}
+
+.neo-comments-header {
+    font-size: 24px;
+    font-weight: 800;
+    font-family: 'Georgia', serif;
+    color: var(--neo-text-heading);
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none; 
+}
+
+.neo-comments-header svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    stroke-width: 2.5;
+    fill: none;
+}
+
+.neo-no-comments {
+    font-size: 16px;
+    color: var(--neo-text-muted);
+    font-style: italic;
+    margin-bottom: 20px;
+}
+
+.neo-comment-item {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+/* Avatar Fallback Container */
+.neo-comment-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 20px;
+    color: #ffffff;
+    flex-shrink: 0;
+}
+
+/* Forces the profile picture to be a perfect circle */
+.neo-comment-avatar-img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: var(--neo-border, #e5e7eb);
+    flex-shrink: 0;
+}
+
+.neo-comment-body {
+    flex: 1;
+}
+
+.neo-comment-name-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 4px;
+}
+
+.neo-comment-name-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.neo-comment-name {
+    font-weight: 800;
+    font-size: 17px;
+    color: var(--neo-text-heading);
+}
+
+/* Styling for the "(you)" tag beside the author's name */
+.neo-comment-you {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--neo-text-muted);
+    font-style: italic;
+    opacity: 0.8;
+}
+
+.neo-comment-badge {
+    background: #7DB894;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 12px;
+}
+
+/* Trash Icon Button */
+.neo-comment-header-right {
+    position: relative;
+}
+
+.neo-comment-delete-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.neo-comment-delete-btn:hover {
+    transform: scale(1.1);
+    background: rgba(239, 68, 68, 0.1); /* Soft red background on hover */
+}
+
+.neo-comment-time {
+    font-size: 14px;
+    color: var(--neo-text-muted);
+    margin-bottom: 12px;
+}
+
+.neo-comment-text {
+    font-size: 16px;
+    line-height: 1.6;
+    margin-bottom: 16px;
+}
+
+.neo-read-more {
+    font-weight: 800;
+    cursor: pointer;
+    color: var(--neo-text-heading);
+}
+
+.neo-comment-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.neo-comment-replies {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--neo-text-heading);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+}
+
+.neo-comment-replies svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+}
+
+.neo-comment-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.neo-comment-vote-group {
+    display: flex;
+    border: 1px solid var(--neo-border);
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.neo-comment-vote {
+    background: transparent;
+    border: none;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--neo-text-heading);
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.neo-comment-vote:first-child {
+    border-right: 1px solid var(--neo-border);
+}
+
+.neo-comment-vote svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+    transition: stroke 0.2s ease, fill 0.2s ease;
+}
+
+/* Highlighted states for Upvotes and Downvotes */
+.neo-comment-vote.active-upvote {
+    color: #10b981; /* Green text */
+}
+.neo-comment-vote.active-upvote svg {
+    stroke: #10b981;
+    fill: rgba(16, 185, 129, 0.2);
+}
+
+.neo-comment-vote.active-downvote {
+    color: #ef4444; /* Red text */
+}
+.neo-comment-vote.active-downvote svg {
+    stroke: #ef4444;
+    fill: rgba(239, 68, 68, 0.2);
+}
+
+.neo-comment-reply-btn {
+    background: transparent;
+    border: none;
+    font-weight: 800;
+    font-size: 15px;
+    color: var(--neo-text-heading);
+    cursor: pointer;
+}
+
+.neo-comments-buttons {
+    display: flex;
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.neo-btn-share, .neo-btn-see-all {
+    flex: 1;
+    padding: 14px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.neo-btn-share {
+    background: var(--neo-text-heading);
+    color: var(--neo-bg-base);
+    border: none;
+}
+
+.neo-btn-see-all {
+    background: transparent;
+    border: 1px solid var(--neo-text-heading);
+    color: var(--neo-text-heading);
+}
+
+.neo-comment-input-area {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.neo-comment-input-area textarea {
+    width: 100%;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid var(--neo-border);
+    background: transparent;
+    color: var(--neo-text-heading);
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    resize: vertical;
+}
+
+.neo-comment-input-area textarea:focus {
+    border-color: var(--neo-text-heading);
+}
+
+.neo-comment-input-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.neo-btn-cancel, .neo-btn-post {
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.neo-btn-cancel {
+    background: transparent;
+    border: none;
+    color: var(--neo-text-muted);
+}
+
+.neo-btn-post {
+    background: var(--neo-text-heading);
+    color: var(--neo-bg-base);
+    border: none;
+}
+
+@media (max-width: 900px) {
+    .neo-comments-buttons { 
+        flex-direction: column; 
+        gap: 12px; 
+    }
+}

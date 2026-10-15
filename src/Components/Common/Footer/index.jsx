@@ -1,6 +1,5 @@
 import React from 'react';
 import './style.css'; 
-import { Link } from 'react-router-dom';
 import logo from '../../../assets/logo.jpg';
 
 const Footer = () => {
@@ -12,7 +11,7 @@ const Footer = () => {
         {/* Left Side: Brand and Copyright */}
         <div className="neo-footer-brand">
           <img 
-            src={logo} 
+            src={logo.src} 
             alt="Neohexane Logo" 
             className="neo-footer-logo" 
             loading="lazy" 
@@ -26,26 +25,23 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Right Side: Standard HTML Menu */}
+        {/* Right Side: Cleaned Navigation matching our Astro structure */}
         <nav className="neo-footer-navigation" aria-label="Footer Navigation">
           <ul className="neo-footer-nav-list">
             <li className="menu-item">
-              < Link to="/about" >ABOUT NEOHEXANE</Link>
+              <a href="/about">ABOUT NEOHEXANE</a>
             </li>
             <li className="menu-item">
-              < Link to="/contact-us" >CONTACT US</Link>
+              <a href="/contact">CONTACT US</a>
             </li>
             <li className="menu-item">
-              < Link to="/accessibility">ACCESSIBILITY</Link>
+              <a href="/legal/disclaimer">DISCLAIMER</a>
             </li>
             <li className="menu-item">
-              < Link to="/disclaimer" >DISCLAIMER</Link>
+              <a href="/legal/privacy">PRIVACY POLICY</a>
             </li>
             <li className="menu-item">
-              < Link to="/privacy-policy" >PRIVACY POLICY</Link>
-            </li>
-            <li className="menu-item">
-              < Link to="/terms" >TERMS OF SERVICE</Link>
+              <a href="/legal/terms">TERMS OF SERVICE</a>
             </li>
           </ul>
         </nav>

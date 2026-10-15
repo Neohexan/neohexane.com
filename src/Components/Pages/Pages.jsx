@@ -1,5 +1,4 @@
-import React from 'react'; // Added quotes
-import { Routes, Route } from 'react-router-dom';
+import React from 'react'; 
 import Header from '../Common/Header';
 import Footer from '../Common/Footer';
 import Home from './Home';

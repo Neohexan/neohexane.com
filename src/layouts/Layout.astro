@@ -1,0 +1,66 @@
+---
+// 1. Make sure this is INSIDE the dashes!
+// If you are on Astro 5+, use ClientRouter instead of ViewTransitions
+import { ClientRouter } from 'astro:transitions'; 
+import Header from '../Components/Common/Header/index.jsx';
+import Footer from '../Components/Common/Footer/index.jsx';
+import '../index.css';
+
+interface Props {
+  title: string;
+  description: string;
+  image?: string; 
+  type?: 'website' | 'article'; 
+}
+
+const { 
+  title, 
+  description, 
+  image = '/logo.jpg',  
+  type = 'website' 
+} = Astro.props;
+
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const socialImageURL = new URL(image, Astro.site);
+const currentUser = Astro.locals.user || null;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+    
+    <title>{title} | NEOHEXANE</title>
+    <meta name="title" content={`${title} | NEOHEXANE`} />
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+    
+    <meta property="og:type" content={type} />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={socialImageURL} />
+    
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={canonicalURL} />
+    <meta property="twitter:title" content={title} />
+    <meta property="twitter:description" content={description} />
+    <meta property="twitter:image" content={socialImageURL} />
+    
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- 2. Use ClientRouter here -->
+    <ClientRouter />
+  </head>
+  <body>
+    <Header client:load currentUser={currentUser} />
+    
+    <main>
+      <slot />
+    </main>
+
+    <Footer />
+    
+  </body>
+</html>

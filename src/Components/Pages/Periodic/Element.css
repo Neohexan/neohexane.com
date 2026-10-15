@@ -1,0 +1,149 @@
+/* Container to match the exact width of Periodic.jsx */
+.neo-el-cms-container {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 0 20px 40px 20px;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #e0e0e0;
+    
+    --card-bg: #0C101A;
+    --border-color: rgba(255,255,255,0.06);
+}
+
+.neo-el-cms-container * {
+    box-sizing: border-box;
+}
+
+/* Technical Divider */
+.neo-el-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 20px 0 40px 0;
+    opacity: 0.6;
+}
+
+.neo-el-divider span {
+    font-family: monospace;
+    font-size: 10px;
+    color: #00FFCC;
+    letter-spacing: 2px;
+    white-space: nowrap;
+}
+
+.neo-el-divider hr {
+    flex-grow: 1;
+    border: none;
+    border-top: 1px dashed var(--border-color);
+    margin: 0;
+}
+
+/* Deep Dive CMS Section Layout */
+.neo-el-cms-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.neo-el-cms-image img {
+    width: 100%;
+    height: auto;
+    max-height: 400px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.neo-el-cms-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+@media(min-width: 900px) {
+    .neo-el-cms-grid {
+        grid-template-columns: 1fr 1.5fr; /* Matches the layout ratio of the base panels */
+    }
+}
+
+.neo-el-cms-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    padding: 40px;
+}
+
+.neo-el-cms-card h3 {
+    font-size: 13px;
+    color: #00FFCC;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin: 0 0 30px 0;
+}
+
+/* CMS Stats */
+.neo-el-cms-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.neo-el-stat label {
+    display: block;
+    font-size: 10px;
+    color: #666;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.neo-el-stat span {
+    font-family: monospace;
+    font-size: 14px;
+    color: #ddd;
+}
+
+/* History Metadata */
+.neo-el-history-meta {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 24px;
+}
+
+.neo-el-tag {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border-color);
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 11px;
+    color: #aaa;
+}
+
+.neo-el-history-text {
+    font-size: 15px;
+    line-height: 1.6;
+    color: #ccc;
+    margin: 0 0 20px 0;
+}
+
+.neo-el-rich-text {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #aaa;
+    border-top: 1px solid var(--border-color);
+    padding-top: 20px;
+}
+
+/* Mobile Overrides */
+@media (max-width: 768px) {
+    .neo-el-cms-container {
+        padding: 0 10px 20px 10px !important;
+    }
+    .neo-el-cms-card {
+        padding: 20px !important;
+    }
+    .neo-el-divider span {
+        font-size: 8px;
+    }
+}

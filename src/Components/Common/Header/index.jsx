@@ -1,18 +1,47 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { GoogleLogin, googleLogout } from '@react-oauth/google';
-import api from '../../../api/axiosClient'; // Assuming this is your Axios instance
+import { GoogleOAuthProvider, GoogleLogin, googleLogout } from '@react-oauth/google';
+import { useStore } from '@nanostores/react';
+import { $user } from '../../../store/userStore'; // <-- Update path if necessary
+import api from '../../../api/axiosClient'; 
 import './Header.css';
 
-// Point directly to your remote Payload server
-const API_URL = 'https://backspace.neohexane.com/api'; 
+const API_URL = import.meta.env.PUBLIC_API_URL;
 
+// HELPER: Safely extracts the avatar URL whether it's from Payload or Google directly
+const getAvatarUrl = (userObj) => {
+  if (!userObj) return "";
+  
+  if (userObj.profilePicture && typeof userObj.profilePicture === 'object' && userObj.profilePicture.url) {
+    return userObj.profilePicture.url;
+  }
+  if (typeof userObj.profilePicture === 'string') {
+    return userObj.profilePicture;
+  }
+  if (typeof userObj.avatarUrl === 'string') {
+    return userObj.avatarUrl;
+  }
+  
+  const initial = (userObj.name || "U").charAt(0).toUpperCase();
+  return `https://ui-avatars.com/api/?name=${initial}&background=0D8ABC&color=fff`;
+};
 
-const Header = () => {
+const Header = ({ currentUser }) => {
   const [activeMenu, setActiveMenu] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState({ name: "", email: "", avatarUrl: "" });
-  const [savedArticles, setSavedArticles] = useState([]);
+  
+  // 1. MAGIC: Subscribe to the nanostore. This auto-updates when anyone calls $user.set()
+  const activeStoreUser = useStore($user);
+  
+  // 2. Combine Astro's SSR prop with the client-side store
+  const displayUser = activeStoreUser || currentUser;
+  const isLoggedIn = Boolean(displayUser && (displayUser.id || displayUser.email || displayUser.name));
+
+  const userProfile = {
+    name: displayUser?.name || "",
+    email: displayUser?.email || "",
+    avatarUrl: getAvatarUrl(displayUser)
+  };
+
+  const [savedArticles, setSavedArticles] = useState(displayUser?.bookmarks || []);
   
   const [isScrolled, setIsScrolled] = useState(false);
   const [isScrollingUp, setIsScrollingUp] = useState(true);
@@ -21,11 +50,9 @@ const Header = () => {
   const activeMenuRef = useRef(activeMenu);
   const menuOpenScrollY = useRef(0); 
 
-  // URL Detection for Archive Page
-  const location = useLocation();
-  const isArchivePage = 
-    location.pathname.toLowerCase().includes('archive') || 
-    window.location.href.toLowerCase().includes('archive');
+  const isArchivePage = typeof window !== 'undefined' ? 
+    window.location.pathname.toLowerCase().includes('archive') || 
+    window.location.href.toLowerCase().includes('archive') : false;
 
   useEffect(() => {
     activeMenuRef.current = activeMenu;
@@ -34,34 +61,30 @@ const Header = () => {
     }
   }, [activeMenu]);
 
-  // Load session from browser storage on mount
+  // Ensure SSR data syncs into the store on initial load if needed
   useEffect(() => {
-    const token = localStorage.getItem('payload-token');
-    const storedUser = localStorage.getItem('payload-user');
-    
-    if (token && storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-        setIsLoggedIn(true);
-      } catch (e) {
-        console.error("Corrupted local storage data. Clearing session.");
-        localStorage.removeItem('payload-token');
-        localStorage.removeItem('payload-user');
-      }
+    if (currentUser && !activeStoreUser) {
+      $user.set(currentUser);
     }
+  }, [currentUser, activeStoreUser]);
+
+  // Listens for the UI event to open the login modal (triggered by ArticleComments)
+  useEffect(() => {
+    const handleOpenLogin = () => setActiveMenu('auth');
+    window.addEventListener('neo-open-login', handleOpenLogin);
+    return () => window.removeEventListener('neo-open-login', handleOpenLogin);
   }, []);
 
-  // Fetch the user's populated bookmarks from Payload CMS
+  // Sync bookmarks quietly in the background if logged in
   useEffect(() => {
     const fetchBookmarks = async () => {
       if (!isLoggedIn) return;
       try {
         const token = localStorage.getItem('payload-token');
+        if (!token) return;
         
-        // Payload's built-in /me endpoint returns the full user object
         const response = await api.get(`${API_URL}/users/me`, {
-          headers: { Authorization: `JWT ${token}` } // Payload uses JWT prefix for auth headers
+          headers: { Authorization: `JWT ${token}` }
         });
         
         if (response.data?.user?.bookmarks) {
@@ -75,32 +98,27 @@ const Header = () => {
     fetchBookmarks();
   }, [isLoggedIn]);
 
-  // Handle the Google popup success response
   const handleSuccess = async (credentialResponse) => {
     try {
       const googleToken = credentialResponse.credential;
       
-      // Send Google token to our custom Payload endpoint
       const response = await api.post(`${API_URL}/users/google-login`, { 
         token: googleToken 
       });
 
-      // Map Payload's user database fields to UI state
       const userInfo = {
         id: response.data.user.id,
         name: response.data.user.name,
         email: response.data.user.email,
-        avatarUrl: response.data.user.profilePicture || `https://ui-avatars.com/api/?name=${response.data.user.name.charAt(0)}&background=0D8ABC&color=fff`
+        avatarUrl: getAvatarUrl(response.data.user),
+        role: response.data.user.role || 'user',
+        bookmarks: response.data.user.bookmarks || []
       };
 
-      // Save the native Payload token
+      // 3. MAGIC: Set the store. This auto-saves to localStorage AND instantly updates ArticleComments
+      $user.set(userInfo);
       localStorage.setItem('payload-token', response.data.token);
-      localStorage.setItem('payload-user', JSON.stringify(userInfo));
       
-      setUser(userInfo);
-      setIsLoggedIn(true);
-      
-      // If the custom endpoint returned bookmarks instantly, populate them
       if (response.data.user.bookmarks) {
         setSavedArticles(response.data.user.bookmarks);
       }
@@ -113,11 +131,11 @@ const Header = () => {
 
   const handleLogout = () => {
     googleLogout(); 
-    localStorage.removeItem('payload-token'); 
-    localStorage.removeItem('payload-user'); 
     
-    setIsLoggedIn(false);
-    setUser({ name: "", email: "", avatarUrl: "" });
+    // 4. MAGIC: Clear the store. Instantly logs out across all components.
+    $user.set(null); 
+    localStorage.removeItem('payload-token'); 
+    
     setSavedArticles([]); 
     closeMenus();
   };
@@ -192,16 +210,16 @@ const Header = () => {
             <div className={`neo-dropdown-window neo-minimal-menu ${activeMenu === 'nav' ? 'active' : ''}`}>
               <div className="nh-dropdown-header">Portal Navigation</div>
               <ul>
-                <li><Link to="/periodic-table" onClick={closeMenus}>Periodic Table</Link></li>
-                <li><Link to="/archive" onClick={closeMenus}>Archives</Link></li>
-                <li><Link to="/about" onClick={closeMenus}>About</Link></li>
+                <li><a href="/periodic-table" onClick={closeMenus}>Periodic Table</a></li>
+                <li><a href="/archive" onClick={closeMenus}>Archives</a></li>
+                <li><a href="/about" onClick={closeMenus}>About</a></li>
               </ul>
             </div>
           </div>
           
-          <Link to="/" className="nh-brand-logo-text" onClick={closeMenus}>
+          <a href="/" className="nh-brand-logo-text" onClick={closeMenus}>
             NEOHEXANE
-          </Link>
+          </a>
         </div>
 
         <div className="nh-segment-right">
@@ -243,11 +261,10 @@ const Header = () => {
                   <ul className="nh-bookmark-scroll-list">
                     {savedArticles.map(article => (
                       <li key={article.id}>
-                        {/* Payload returns slugs for linked articles, not full URLs */}
-                        <Link to={`/article/${article.slug}`} onClick={closeMenus}>
+                        <a href={`/article/${article.slug}`} onClick={closeMenus}>
                           <span className="nh-article-title">{article.title}</span>
                           <span className="nh-read-article">READ ARTICLE &rarr;</span>
-                        </Link>
+                        </a>
                       </li>
                     ))}
                   </ul>
@@ -264,7 +281,7 @@ const Header = () => {
               style={{ overflow: 'hidden', padding: 0 }}
             >
               {isLoggedIn ? (
-                <img src={user.avatarUrl} alt="User Profile" className="nh-avatar-small" />
+                <img src={userProfile.avatarUrl} alt="User Profile" className="nh-avatar-small" referrerPolicy="no-referrer" />
               ) : (
                 <img width="48" height="48" src="https://img.icons8.com/doodle/48/user.png" alt="user" className="nh-avatar-small" />
               )}
@@ -276,11 +293,11 @@ const Header = () => {
                   <>
                     <div className="nh-auth-profile-header">
                       <div className="nh-auth-avatar-box">
-                        <img src={user.avatarUrl} alt="Profile" />
+                        <img src={userProfile.avatarUrl} alt="Profile" referrerPolicy="no-referrer" />
                       </div>
                       <div className="nh-auth-profile-info">
-                        <span className="nh-auth-name">{user.name}</span>
-                        <span className="nh-auth-email">{user.email}</span>
+                        <span className="nh-auth-name">{userProfile.name}</span>
+                        <span className="nh-auth-email">{userProfile.email}</span>
                       </div>
                     </div>
                     <button className="nh-logout-btn" onClick={handleLogout}>
@@ -291,13 +308,15 @@ const Header = () => {
                   <>
                     <h4 className="nh-auth-title">NEOHEXANE ACCESS</h4>
                     <div style={{ display: 'flex', justifyContent: 'center' }}>
-                      <GoogleLogin
-                        onSuccess={handleSuccess}
-                        onError={() => console.error('Google Login Failed')}
-                        theme="filled_black" 
-                        shape="pill"
-                        width="100%"
-                      />
+                      <GoogleOAuthProvider clientId={import.meta.env.PUBLIC_GOOGLE_CLIENT_ID}>
+                        <GoogleLogin
+                          onSuccess={handleSuccess}
+                          onError={() => console.error('Google Login Failed')}
+                          theme="filled_black" 
+                          shape="pill"
+                          width="100%"
+                        />
+                      </GoogleOAuthProvider>
                     </div>
                   </>
                 )}

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import './NewsletterWidget.css';
 
 const NewsletterWidget = () => {
@@ -58,7 +57,7 @@ const NewsletterWidget = () => {
       )}
       
       <p className="neo-privacy">
-        Your <Link to="/privacy-policy">privacy</Link> is important to us
+        Your <a heref="/legal/privacy">privacy</a> is important to us
       </p>
     </div>
   );

@@ -1,0 +1,11 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Archive from '../Components/Pages/Archives/Archive.jsx';
+---
+
+<Layout title="Archive" description="Find all articles">
+  
+  <!-- EVERYTHING IN HERE GETS SENT TO THE SLOT -->
+  <Archive client:load />
+  
+</Layout>

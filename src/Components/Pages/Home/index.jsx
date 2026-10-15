@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import './style.css';
-import { Link } from 'react-router-dom';
 
 const CHEMISTRY_CONCEPTS = [
     { id: "organic", name: "Organic Chemistry", abbr: "C₆", description: "Structure, properties, and reactions of carbon-based compounds.", category: "Carbon Chemistry", color: "#7C3AED", colorAlpha: "rgba(124, 58, 237, 0.15)", colorGlow: "rgba(124, 58, 237, 0.5)", formula: "C_nH_{2n+2}" },
@@ -233,13 +232,13 @@ const Home = () => {
                         Beyond static textbooks and generic courses. Neohexane merges advanced web technology with deep analytical data to create laboratory-grade educational tools for the modern web. Dive into our extensive library of tech and science articles, or experience data like never before with our interactive Quantum Periodic Table.
                     </p>
                     <div className="button-group">
-                        <a href="https://neohexane.com/periodic-table/" className="btn btn-primary">
+                        <a href="/periodic-table" className="btn btn-primary">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                                 <path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 20.191c-1.25.687-2.779-.217-2.779-1.643V5.653z" clipRule="evenodd" />
                             </svg>
                             Periodic Table
                         </a>
-                        <Link to="/archive" className="btn btn-secondary">
+                        <a heref="/archive" className="btn btn-secondary">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                                 <polyline points="14 2 14 8 20 8"></polyline>
@@ -248,7 +247,7 @@ const Home = () => {
                                 <polyline points="10 9 9 9 8 9"></polyline>
                             </svg>
                             Explore Articles
-                        </Link>
+                        </a>
                     </div>
                 </div>
             </div>

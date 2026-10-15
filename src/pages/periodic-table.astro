@@ -1,0 +1,22 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Periodic from '../Components/Pages/Periodic/Periodic.jsx';
+
+const metaTitle = "Interactive Periodic Table | Neohexane";
+const metaDescription = "Explore elemental trends, electronegativity, and orbital shielding with our interactive quantum layout periodic table.";
+---
+
+<Layout title={metaTitle} description={metaDescription}>
+  <main class="neo-pt-page-wrapper">
+    <!-- Hydrate the wrapper component so it can handle state and clicks -->
+    <Periodic client:load />
+  </main>
+</Layout>
+
+<style>
+  .neo-pt-page-wrapper {
+    min-height: 100vh;
+    background-color: #07090F; /* Matches your --bg-dark */
+    padding-top: 80px; /* Adjust based on your header height */
+  }
+</style>

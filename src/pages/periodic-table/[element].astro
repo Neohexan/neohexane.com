@@ -1,0 +1,55 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Element from '../../Components/Pages/Periodic/Element.jsx';
+import elementsData from '../../assets/elements_data.js';
+
+// 1. Get the element name directly from the URL
+const { element } = Astro.params;
+
+// 2. Find the local data manually instead of relying on getStaticPaths props
+const localData = elementsData.find(
+  (el) => el.name.toLowerCase() === element?.toLowerCase()
+);
+
+// 3. SAFETY CHECK: If the element doesn't exist, redirect to the main dashboard
+if (!localData) {
+  return Astro.redirect('/periodic-table');
+}
+
+// 4. Fetch the rich content from Payload CMS server-side
+let cmsData = null;
+try {
+  const res = await fetch(`${import.meta.env.PUBLIC_API_URL}/elements?where[slug][equals]=${element}`);
+  const data = await res.json();
+  if (data.docs && data.docs.length > 0) {
+    cmsData = data.docs[0];
+  }
+} catch (error) {
+  console.error(`Failed to fetch Payload data for ${element}`, error);
+}
+
+// 5. Safely construct the meta tags now that we guarantee localData exists
+const metaTitle = `${localData.name} (${localData.symbol}) - Element Data | NEOHEXANE`;
+const metaDescription = cmsData?.history?.historicalNotes 
+  ? cmsData.history.historicalNotes.substring(0, 150) + "..." 
+  : `Explore the properties, electron configuration, and orbital shielding of ${localData.name}.`;
+---
+
+<Layout title={metaTitle} description={metaDescription}>
+  <main class="nh-element-page-wrapper">
+    <!-- Pass both data sources to your dedicated component -->
+    <Element 
+      client:load 
+      localData={localData} 
+      cmsData={cmsData} 
+    />
+  </main>
+</Layout>
+
+<style>
+  .nh-element-page-wrapper {
+    min-height: 100vh;
+    background-color: #07090F;
+    padding: 100px 20px 40px 20px; 
+  }
+</style>

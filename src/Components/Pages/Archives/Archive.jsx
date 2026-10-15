@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
 import api from '../../../api/axiosClient';
 import logo from '../../../assets/logo.jpg';
 import './Archive.css';
@@ -49,19 +48,37 @@ const ImageCarousel = ({ images, title }) => {
 };
 
 const Archive = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const searchQuery = searchParams.get('search') || '';
-
+  const [searchQuery, setSearchQuery] = useState('');
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
   const [savedArticles, setSavedArticles] = useState([]);
 
+  // --- SYNC URL SEARCH PARAMS ON MOUNT (SSR SAFE) ---
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const query = params.get('search');
+      if (query) {
+        setSearchQuery(query);
+      }
+    }
+  }, []);
+
+  // --- HANDLE SEARCH & UPDATE URL NATIVELY ---
   const handleSearchChange = (e) => {
     const val = e.target.value;
-    if (val) setSearchParams({ search: val }, { replace: true });
-    else setSearchParams({}, { replace: true });
+    setSearchQuery(val);
+
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location);
+      if (val) {
+        url.searchParams.set('search', val);
+      } else {
+        url.searchParams.delete('search');
+      }
+      window.history.replaceState({}, '', url);
+    }
   };
 
   // --- SYNC BOOKMARKS ---
@@ -156,7 +173,7 @@ const Archive = () => {
             id: doc.id,
             title: doc.title,
             slug: doc.slug,
-            link: `/article/${doc.slug}`,
+            link: `/articles/${doc.slug}`,
             cat: catName,
             images: finalImages, 
             author: author,
@@ -196,29 +213,22 @@ const Archive = () => {
       return;
     }
 
-    // FIX 1: Bulletproof type-matching (Stringify everything for comparison)
     const targetId = String(id);
     const isSaved = savedArticles.some(savedId => String(savedId) === targetId);
     
-    // Create new array using the exact original types to prevent Payload DB errors
     const updatedBookmarks = isSaved 
       ? savedArticles.filter(savedId => String(savedId) !== targetId)
       : [...savedArticles, id];
 
-    // FIX 2: Store previous state cleanly for reverting
     const previousBookmarks = [...savedArticles];
 
-    // Optimistic UI Update
     setSavedArticles(updatedBookmarks);
 
     try {
-      // FIX 3: Removed manual Authorization headers (axiosClient handles this now)
       await api.patch(`/users/${user.id}`, { bookmarks: updatedBookmarks });
-      
       window.dispatchEvent(new CustomEvent('neoBookmarkUpdated'));
     } catch (error) {
       console.error("Failed to sync bookmark with Payload database", error);
-      // Revert to exact previous state on failure
       setSavedArticles(previousBookmarks);
     }
   };
@@ -248,7 +258,7 @@ const Archive = () => {
   return (
     <div className="discover-wrapper">
       <div className="discover-search-pill">
-        <img src={logo} alt="Neohexane Logo" className="discover-pill-logo" />
+        <img src={logo.src} alt="Neohexane Logo" className="discover-pill-logo" />
         <input 
           type="text" 
           placeholder="Search" 
@@ -274,11 +284,10 @@ const Archive = () => {
         {!loading && filteredArticles.length === 0 && <p className="discover-empty">No results found.</p>}
 
         {filteredArticles.map(art => {
-          // Explicit string coercion for the UI check as well
           const isSaved = savedArticles.some(savedId => String(savedId) === String(art.id));
 
           return (
-            <Link to={art.link} className="discover-card" key={art.id}>
+            <a href={art.link} className="discover-card" key={art.id}>
               
               <div className="discover-media-container" style={{ position: 'relative' }}>
                 <ImageCarousel images={art.images} title={art.title} />
@@ -305,7 +314,7 @@ const Archive = () => {
                   </div>
                 </div>
               </div>
-            </Link>
+            </a>
           );
         })}
       </div>

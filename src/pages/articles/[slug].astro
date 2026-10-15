@@ -1,0 +1,41 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Single from '../../Components/Pages/Single/Single.jsx'; // Adjust path if necessary
+
+const { slug } = Astro.params;
+const API_URL = import.meta.env.PUBLIC_API_URL ;
+
+// 1. Fetch the specific article
+const articleRes = await fetch(`${API_URL}/articles?where[slug][equals]=${slug}&depth=2`);
+const articleData = await articleRes.json();
+
+// Handle 404 if article doesn't exist
+if (!articleData.docs || articleData.docs.length === 0) {
+  return Astro.redirect('/404');
+}
+
+const post = articleData.docs[0];
+
+// 2. Fetch related articles (excluding the current one)
+const relatedRes = await fetch(`${API_URL}/articles?limit=10&where[id][not_equals]=${post.id}`);
+const relatedData = await relatedRes.json();
+const relatedPosts = relatedData.docs || [];
+
+// 3. Extract SEO data with intelligent fallbacks
+const metaTitle = post.seo?.metaTitle || post.title;
+const metaDescription = post.seo?.metaDescription || post.subtitle || 'Read this article on Neohexane.';
+
+// 4. Securely read the authenticated user from the Astro fetch pipeline
+const currentUser = Astro.locals.user || null;
+---
+
+<!-- Pass the extracted SEO data into your Layout tag -->
+<Layout title={metaTitle} description={metaDescription}>
+  <!-- Use client:load to hydrate the React component for MathJax, Theme Toggle, and Animations -->
+  <Single 
+    client:load 
+    post={post} 
+    relatedPosts={relatedPosts} 
+    currentUser={currentUser}
+  />
+</Layout>

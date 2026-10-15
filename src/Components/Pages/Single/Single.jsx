@@ -1,44 +1,43 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import api from '../../../api/axiosClient';
 import './Single.css';
-import ArticleSidebar from '../../Widgets/ArticleSidebar';
-import RetroTVError from '../../Widgets/RetroTVError/RetroTVError'; 
-import { MathJaxContext, MathJax } from 'better-react-mathjax';
+import ArticleSidebar from '../../Widgets/ArticleSidebar'; 
+import ArticleComments from './ArticleComments'; 
+import { marked } from 'marked';
 
-// ==========================================
-// 1. REUSABLE TAG FAN COMPONENT (Main H1)
-// ==========================================
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import renderMathInElement from 'katex/dist/contrib/auto-render.js';
+
+const LazyImage = ({ src, alt, className }) => {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div className={`neo-lazy-wrapper ${className} ${loaded ? 'loaded' : ''}`}>
+      <img 
+        src={src} 
+        alt={alt} 
+        loading="lazy" 
+        onLoad={() => setLoaded(true)} 
+        className="neo-lazy-img"
+      />
+    </div>
+  );
+};
+
 const TagFan = ({ text, textColor = '#FFFFFF', finalColor, layers, delay = 0, canReveal = true, className = '' }) => {
   const intermediateLayers = layers.slice(0, -1);
   return (
-    <span
-      data-can-reveal={canReveal ? 'true' : 'false'}
-      style={{ '--delay': `${delay}s` }}
-      className={`mr-tag-fan ${className}`}
-    >
+    <span data-can-reveal={canReveal ? 'true' : 'false'} style={{ '--delay': `${delay}s` }} className={`mr-tag-fan ${className}`}>
       <span className="mr-tag-base" aria-hidden="true" />
       {intermediateLayers.map((color, index) => (
-        <span
-          key={index}
-          className="mr-tag-layer"
-          style={{ backgroundColor: color, '--index': index }}
-          aria-hidden="true"
-        />
+        <span key={index} className="mr-tag-layer" style={{ backgroundColor: color, '--index': index }} aria-hidden="true" />
       ))}
-      <span
-        className="mr-tag-layer mr-text-layer"
-        style={{ backgroundColor: finalColor, color: textColor, '--index': intermediateLayers.length }}
-      >
+      <span className="mr-tag-layer mr-text-layer" style={{ backgroundColor: finalColor, color: textColor, '--index': intermediateLayers.length }}>
         <span>{text}</span>
       </span>
     </span>
   );
 };
 
-// ==========================================
-// 2. SMOOTH STAGGERED WORD REVEAL (Main H1)
-// ==========================================
 const WordReveal = ({ text, baseDelay, wordInterval = 0.12, canReveal = true, className = '' }) => {
   const words = text.split(' ').filter(w => w.trim().length > 0);
   return (
@@ -46,11 +45,7 @@ const WordReveal = ({ text, baseDelay, wordInterval = 0.12, canReveal = true, cl
       {words.map((word, idx) => {
         const delay = baseDelay + idx * wordInterval;
         return (
-          <span
-            key={idx}
-            className={`mr-word-span ${canReveal ? 'revealed' : ''}`}
-            style={{ transitionDelay: `${delay}s` }}
-          >
+          <span key={idx} className={`mr-word-span ${canReveal ? 'revealed' : ''}`} style={{ transitionDelay: `${delay}s` }}>
             {word}
           </span>
         );
@@ -59,155 +54,46 @@ const WordReveal = ({ text, baseDelay, wordInterval = 0.12, canReveal = true, cl
   );
 };
 
-// ==========================================
-// 3. MEMOIZED CONTENT FIREWALL
-//==========================================
-// 1. Define the config object to enable single dollar signs
-const mathJaxConfig = {
-  tex: {
-    inlineMath: [['$', '$'], ['\\(', '\\)']],
-    displayMath: [['$$', '$$'], ['\\[', '\\]']]
-  }
-};
-
-const MemoizedArticleContent = React.memo(({ html }) => {
-  const contentRef = useRef(null);
-
-  useEffect(() => {
-    if (!contentRef.current) return;
-
-    const wrappers = contentRef.current.querySelectorAll('.neo-interior-wrapper');
-    if (wrappers.length === 0) return;
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const el = entry.target;
-          el.classList.add('is-visible');
-
-          const gooeyHeading = el.querySelector('.neo-gooey-heading');
-          const wordCount = el.querySelectorAll('.neo-gooey-word').length;
-          const totalTime = (0.8 + (wordCount * 0.08)) * 1000;
-
-          setTimeout(() => {
-            if (gooeyHeading) gooeyHeading.style.filter = 'none'; 
-          }, totalTime + 50);
-
-          observer.unobserve(el);
-        }
-      });
-    }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
-
-    wrappers.forEach(w => observer.observe(w));
-    return () => observer.disconnect();
-  }, [html]); 
-  
-  return (
-    <MathJaxContext>
-      <MathJax dynamic>
-        <article 
-          ref={contentRef}
-          className="neo-post-content" 
-          dangerouslySetInnerHTML={{ __html: html }} 
-        />
-      </MathJax>
-    </MathJaxContext>
-  );
-});
-
-// ==========================================
-// MAIN POST COMPONENT
-// ==========================================
-const Post = () => {
-  const { slug } = useParams();
-  const [post, setPost] = useState(null);
-  const [relatedPosts, setRelatedPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+// ADDED: currentUser prop to the Single component
+const Single = ({ post, currentUser }) => {
+  const [isMounted, setIsMounted] = useState(false);
+  const [isLightMode, setIsLightMode] = useState(false); 
   const [savedArticles, setSavedArticles] = useState([]);
-  
   const [isScrolledDown, setIsScrolledDown] = useState(false);
   const [canReveal, setCanReveal] = useState(false); 
+  
   const lastScrollY = useRef(0);
-  const scrollerRef = useRef(null);
-
-  const [isLightMode, setIsLightMode] = useState(() => {
-    const savedTheme = localStorage.getItem('neo_theme');
-    if (savedTheme) return savedTheme === 'light';
-    return window.matchMedia('(prefers-color-scheme: light)').matches;
-  });
+  const articleRef = useRef(null); 
 
   useEffect(() => {
-    if (isLightMode) {
+    setIsMounted(true);
+    setTimeout(() => setCanReveal(true), 150);
+
+    const savedTheme = localStorage.getItem('neo_theme');
+    const prefersLight = savedTheme === 'light' || (!savedTheme && window.matchMedia('(prefers-color-scheme: light)').matches);
+    
+    if (prefersLight) {
+      setIsLightMode(true);
       document.body.classList.add('neo-light-mode');
       document.documentElement.classList.add('neo-light-mode');
-      const rootEl = document.getElementById('root');
-      if (rootEl) rootEl.classList.add('neo-light-mode');
     }
-  }, [isLightMode]);
 
-  const toggleTheme = () => {
-    const newMode = !isLightMode;
-    setIsLightMode(newMode);
-    localStorage.setItem('neo_theme', newMode ? 'light' : 'dark');
-    document.body.classList.toggle('neo-light-mode', newMode);
-    document.documentElement.classList.toggle('neo-light-mode', newMode);
-    
-    const rootEl = document.getElementById('root');
-    if (rootEl) rootEl.classList.toggle('neo-light-mode', newMode);
-  };
-
-  useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
-        setIsScrolledDown(true); 
-      } else {
-        setIsScrolledDown(false); 
-      }
+      setIsScrolledDown(currentScrollY > lastScrollY.current && currentScrollY > 100);
       lastScrollY.current = currentScrollY;
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
+    
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  useEffect(() => {
-    setLoading(true);
-    setCanReveal(false); 
-    window.scrollTo(0, 0); 
-
-    // Payload CMS API calls
-    api.get(`/articles?where[slug][equals]=${slug}`)
-      .then((res) => {
-        if (res.data && res.data.docs && res.data.docs.length > 0) {
-          setPost(res.data.docs[0]);
-          return api.get(`/articles?limit=10&where[id][not_equals]=${res.data.docs[0].id}`);
-        } else {
-          throw new Error("Article not found in database.");
-        }
-      })
-      .then((res) => {
-        if(res && res.data && res.data.docs) setRelatedPosts(res.data.docs);
-        setLoading(false);
-        setTimeout(() => setCanReveal(true), 150);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
-  }, [slug]);
-
-  // ==========================================
-  // BULLETPROOF H1 TITLE ENGINE
-  // ==========================================
   const dynamicTitle = useMemo(() => {
     if (!post || !post.title) return null;
 
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = post.title;
-    const cleanText = tempDiv.textContent || tempDiv.innerText || "";
-    const words = cleanText.trim().split(/\s+/).filter(w => w.trim().length > 0);
-
+    const cleanText = post.title.replace(/<[^>]+>/g, '').trim();
+    const words = cleanText.split(/\s+/).filter(w => w.trim().length > 0);
+    
     if (words.length === 0) return null;
     const elements = [];
     
@@ -267,73 +153,163 @@ const Post = () => {
         {elements}
       </h1>
     );
-  }, [post, isLightMode, canReveal]);
+  }, [post, canReveal]);
 
   // ==========================================
-  // PURE HTML GOOEY + 5-COLOR ANIMATED DOT PARSER
+  // MATHEMATICS PRE-PROCESSOR & COMPILER
   // ==========================================
   const parsedContentHtml = useMemo(() => {
-    if (!post || !post.content) return { __html: '' };
+    if (!post || !post.content) return '';
+    let rawContent = post.content;
+    
+    rawContent = rawContent.replace(/[b1]([\s\S]*?)\[\/b1\]/g, '<div class="neo-custom-box neo-box-1">$1</div>');
+    
+    const displayMath = [];
+    const inlineMath = [];
 
-    try {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(post.content, 'text/html');
-      const headings = doc.querySelectorAll('h2, h3, h4, h5, h6');
+    // Extract Display Math safely
+    rawContent = rawContent.replace(/\$\$([\s\S]+?)\$\$/g, (match, math) => {
+      displayMath.push(math);
+      return `NEODISPLAYMATH${displayMath.length - 1}NEO`;
+    });
+    rawContent = rawContent.replace(/\\\[([\s\S]+?)\\\]/g, (match, math) => {
+      displayMath.push(math);
+      return `NEODISPLAYMATH${displayMath.length - 1}NEO`;
+    });
 
-      const dotPalettes = isLightMode ? [
-        ['#EF6156', '#FFBD00', '#299093', '#EF6156', '#FFBD00'], 
-        ['#299093', '#EF6156', '#FFBD00', '#299093', '#EF6156'], 
-        ['#FFBD00', '#299093', '#EF6156', '#FFBD00', '#299093'], 
-      ] : [
-        ['#A5A096', '#EF6156', '#FFBD00', '#299093', '#A5A096'], 
-        ['#299093', '#A5A096', '#EF6156', '#FFBD00', '#299093'], 
-        ['#FFBD00', '#299093', '#A5A096', '#EF6156', '#FFBD00'], 
-        ['#EF6156', '#FFBD00', '#299093', '#A5A096', '#EF6156'], 
-      ];
+    // Extract Inline Math safely
+    rawContent = rawContent.replace(/\$([^\$\n]+?)\$/g, (match, math) => {
+      inlineMath.push(math);
+      return `NEOINLINEMATH${inlineMath.length - 1}NEO`;
+    });
+    rawContent = rawContent.replace(/\\\(([^\n]+?)\\\)/g, (match, math) => {
+      inlineMath.push(math);
+      return `NEOINLINEMATH${inlineMath.length - 1}NEO`;
+    });
 
-      headings.forEach((heading, hIndex) => {
-        const text = heading.textContent.trim();
-        const words = text.split(/\s+/).filter(w => w.trim().length > 0);
-        if (words.length === 0) return;
+    let html = marked.parse(rawContent);
 
-        const originalTag = heading.tagName.toLowerCase();
+    // Re-inject Rendered KaTeX Display Math (Strips out buggy marked.js <p> tags)
+    displayMath.forEach((math, i) => {
+      try {
+        const rendered = katex.renderToString(math, { displayMode: true, throwOnError: false });
+        const exactPRegex = new RegExp(`<p>\\s*NEODISPLAYMATH${i}NEO\\s*</p>`, 'g');
+        const fallbackRegex = new RegExp(`NEODISPLAYMATH${i}NEO`, 'g');
         
-        const wrapper = doc.createElement('div');
-        wrapper.className = `neo-interior-wrapper is-${originalTag}-wrapper`;
-        heading.parentNode.insertBefore(wrapper, heading);
+        if (exactPRegex.test(html)) {
+          html = html.replace(new RegExp(`<p>\\s*NEODISPLAYMATH${i}NEO\\s*</p>`, 'g'), () => `<div class="neo-math-display">${rendered}</div>`);
+        } else {
+          html = html.replace(fallbackRegex, () => `<div class="neo-math-display">${rendered}</div>`);
+        }
+      } catch (err) { console.error(err); }
+    });
 
-        const theme = dotPalettes[hIndex % dotPalettes.length];
-        const dot = doc.createElement('span');
-        dot.className = 'mr-animated-dot';
-        
-        let layersHtml = `<span class="mr-dot-base"></span>`;
-        theme.forEach((color, i) => {
-           layersHtml += `<span class="mr-dot-layer" style="background-color: ${color}; --index: ${i};"></span>`;
-        });
-        dot.innerHTML = layersHtml;
-        wrapper.appendChild(dot);
+    // Re-inject Rendered KaTeX Inline Math
+    inlineMath.forEach((math, i) => {
+      try {
+        const rendered = katex.renderToString(math, { displayMode: false, throwOnError: false });
+        const plainRegex = new RegExp(`NEOINLINEMATH${i}NEO`, 'g');
+        html = html.replace(plainRegex, () => `<span class="neo-math-inline">${rendered}</span>`);
+      } catch (err) { console.error(err); }
+    });
 
-        heading.innerHTML = ''; 
-        heading.className = `neo-gooey-heading is-${originalTag}`;
+    html = html.replace(
+      /<img([^>]+)>/g, 
+      '<span class="neo-img-skeleton-wrapper"><img$1 loading="lazy" onload="this.parentElement.classList.add(\'loaded\')" /></span>'
+    );
 
-        words.forEach((word, index) => {
-          const span = doc.createElement('span');
-          span.className = 'neo-gooey-word';
-          span.style.transitionDelay = `${index * 0.08}s`;
-          span.innerText = word;
-          heading.appendChild(span);
-          heading.appendChild(doc.createTextNode(' '));
-        });
+    return html;
+  }, [post]);
 
-        wrapper.appendChild(heading);
+  useEffect(() => {
+    if (!isMounted || !articleRef.current) return;
+
+    renderMathInElement(articleRef.current, {
+      delimiters: [
+        { left: '$$', right: '$$', display: true },
+        { left: '$', right: '$', display: false },
+        { left: '\\(', right: '\\)', display: false },
+        { left: '[', right: ']', display: true }
+      ],
+      throwOnError: false 
+    });
+
+    const headings = articleRef.current.querySelectorAll('h2, h3, h4, h5, h6');
+    if (headings.length === 0) return;
+
+    const dotPalettes = isLightMode ? [
+      ['#EF6156', '#FFBD00', '#299093', '#EF6156', '#FFBD00'], 
+      ['#299093', '#EF6156', '#FFBD00', '#299093', '#EF6156'], 
+      ['#FFBD00', '#299093', '#EF6156', '#FFBD00', '#299093'], 
+    ] : [
+      ['#A5A096', '#EF6156', '#FFBD00', '#299093', '#A5A096'], 
+      ['#299093', '#A5A096', '#EF6156', '#FFBD00', '#299093'], 
+      ['#FFBD00', '#299093', '#A5A096', '#EF6156', '#FFBD00'], 
+      ['#EF6156', '#FFBD00', '#299093', '#A5A096', '#EF6156'], 
+    ];
+
+    headings.forEach((heading, hIndex) => {
+      if (heading.dataset.gooeyApplied === "true") return;
+      heading.dataset.gooeyApplied = "true";
+
+      const text = heading.textContent.trim();
+      const words = text.split(/\s+/).filter(w => w.trim().length > 0);
+      if (words.length === 0) return;
+
+      const originalTag = heading.tagName.toLowerCase();
+      const wrapper = document.createElement('div');
+      wrapper.className = `neo-interior-wrapper is-${originalTag}-wrapper observed`; 
+      
+      heading.parentNode.insertBefore(wrapper, heading);
+
+      const theme = dotPalettes[hIndex % dotPalettes.length];
+      const dot = document.createElement('span');
+      dot.className = 'mr-animated-dot';
+      
+      let layersHtml = `<span class="mr-dot-base"></span>`;
+      theme.forEach((color, i) => {
+          layersHtml += `<span class="mr-dot-layer" style="background-color: ${color}; --index: ${i};"></span>`;
+      });
+      dot.innerHTML = layersHtml;
+      wrapper.appendChild(dot);
+
+      heading.innerHTML = ''; 
+      heading.className = `neo-gooey-heading is-${originalTag}`;
+
+      words.forEach((word, index) => {
+        const span = document.createElement('span');
+        span.className = 'neo-gooey-word';
+        span.style.transitionDelay = `${index * 0.08}s`;
+        span.innerText = word;
+        heading.appendChild(span);
+        heading.appendChild(document.createTextNode(' '));
       });
 
-      return { __html: doc.body.innerHTML };
-    } catch (e) {
-      console.error("Content parser failed", e);
-      return { __html: post.content };
-    }
-  }, [post, isLightMode]);
+      wrapper.appendChild(heading);
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            setTimeout(() => {
+              heading.style.filter = 'none'; 
+            }, (0.8 + (words.length * 0.08)) * 1000 + 50);
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+
+      observer.observe(wrapper);
+    });
+  }, [parsedContentHtml, isLightMode, isMounted]);
+
+  const toggleTheme = () => {
+    const newMode = !isLightMode;
+    setIsLightMode(newMode);
+    localStorage.setItem('neo_theme', newMode ? 'light' : 'dark');
+    document.body.classList.toggle('neo-light-mode', newMode);
+    document.documentElement.classList.toggle('neo-light-mode', newMode);
+  };
 
   const toggleBookmark = (id) => {
     if (savedArticles.includes(id)) {
@@ -352,50 +328,30 @@ const Post = () => {
     }
   };
 
-  const scrollCarousel = (dir) => {
-    if (scrollerRef.current) scrollerRef.current.scrollBy({ left: dir * 300, behavior: 'smooth' });
-  };
-
   const getFeaturedImage = (p) => {
-    // Extract first image from the HTML content as fallback until a Media collection is configured
-    if (!p.content) return null;
-    const match = p.content.match(/<img[^>]+src=["']([^"']+)["']/i);
-    return match ? match[1] : null;
+    return p.featuredImageUrl ? p.featuredImageUrl : null;
   };
 
-  if (loading) {
-    return (
-      <div className="neo-loading-screen">
-        <div className="loader">
-          <span><span></span><span></span><span></span><span></span></span>
-          <div className="base">
-            <span></span>
-            <div className="face"></div>
-          </div>
-        </div>
-        <div className="longfazers">
-          <span></span><span></span><span></span><span></span>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="neo-layout-wrapper" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', marginTop: '40px' }}>
-        <RetroTVError message="Check Your Network :(" />
-      </div>
-    );
-  }
+  const getAuthorImage = (authorData) => {
+    if (!authorData) return 'https://ui-avatars.com/api/?name=Neohexane&background=0D8ABC&color=fff';
+    if (authorData.avatar?.url) return authorData.avatar.url;
+    if (authorData.profilePicture?.url) return authorData.profilePicture.url;
+    if (authorData.image?.url) return authorData.image.url;
+    if (authorData.imageUrl) return authorData.imageUrl;
+    
+    const fallbackName = encodeURIComponent(authorData.name || 'User');
+    return `https://ui-avatars.com/api/?name=${fallbackName}&background=0D8ABC&color=fff`;
+  };
 
   if (!post) return null;
 
   const mainImage = getFeaturedImage(post);
-  const avatar = 'https://ui-avatars.com/api/?name=N&background=0D8ABC&color=fff';
-  const author = 'Neohexane Team'; // Hardcoded until user relationships are set up
+  const author = post.author?.name || 'Neohexane Team'; 
+  const avatar = getAuthorImage(post.author);
   const date = new Date(post.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   
-  // Directly pull Payload string and array fields
+  const categoryName = post.category?.name || post.category?.title || null;
+  
   const subtitle = post.subtitle || "";
   const references = post.references || [];
   const keywords = post.tags || [];
@@ -420,6 +376,10 @@ const Post = () => {
 
       <div className="neo-layout-wrapper">
         <header className="neo-article-header">
+          {categoryName && (
+            <div className="neo-article-cat">{categoryName}</div>
+          )}
+          
           <div className="neo-title-row">
             {dynamicTitle}
           </div>
@@ -428,7 +388,7 @@ const Post = () => {
           
           <div className="neo-article-meta">
             <span className="neo-by-text">BY</span>
-            <img src={avatar} className="neo-author-avatar" alt={author} />
+            <LazyImage src={avatar} alt={author} className="neo-author-avatar-wrapper" />
             <span className="neo-author-name">{author}</span>
             <span className="neo-meta-divider">|</span>
             <span className="neo-meta-date">{date}</span>
@@ -437,9 +397,13 @@ const Post = () => {
 
         <div className="neo-content-sidebar-grid">
           <main className="neo-main-content">
-            {mainImage && <img src={mainImage} className="neo-featured-image" alt="Featured" />}
+            {mainImage && <LazyImage src={mainImage} alt="Featured" className="neo-featured-image-wrapper" />}
             
-            <MemoizedArticleContent html={parsedContentHtml.__html} />
+            <article 
+              ref={articleRef} 
+              className="neo-post-content" 
+              dangerouslySetInnerHTML={{ __html: parsedContentHtml }} 
+            />
 
             {(references.length > 0 || keywords.length > 0) && (
               <div className="neo-article-subs">
@@ -467,50 +431,27 @@ const Post = () => {
                     </summary>
                     <div className="neo-sub-content neo-keywords-content">
                       {keywords.map((tag, i) => (
-                        <Link key={i} to={`/articles/?search=${tag.tagName}`} className="neo-keyword-tag">
+                        <a key={i} href={`/articles/?search=${tag.tagName}`} className="neo-keyword-tag">
                           {tag.tagName}
-                        </Link>
+                        </a>
                       ))}
                     </div>
                   </details>
                 )}
               </div>
             )}
+            
+            {/* ADDED: Passes the currentUser prop directly to the comments */}
+            <ArticleComments postId={post.id} currentUser={currentUser} />
+
           </main>
 
           <ArticleSidebar />
         </div>
       </div>
 
-      {relatedPosts.length > 0 && (
-        <section className="neo-scroller-section">
-          <header className="neo-scroller-header">
-            <span className="neo-scroller-header-muted">Further Reading</span>
-            <h2 className="neo-scroller-header-main">Discover More Articles</h2>
-          </header>
-          <div className="neo-scroller-wrapper">
-            <div className="neo-scroller-container" ref={scrollerRef}>
-              {relatedPosts.map(rp => (
-                <div key={rp.id} className="neo-scroller-card">
-                  {getFeaturedImage(rp) && <img src={getFeaturedImage(rp)} alt={rp.title} />}
-                  <h3><Link to={`/post/${rp.slug}`}>{rp.title}</Link></h3>
-                  <Link to={`/post/${rp.slug}`} className="neo-read-more-arrow">
-                    Read Article <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-                  </Link>
-                </div>
-              ))}
-            </div>
-            <div className="neo-scroller-controls">
-              <button className="neo-scroll-btn" onClick={() => scrollCarousel(-1)}><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-              <button className="neo-scroll-btn" onClick={() => scrollCarousel(1)}><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* MOBILE ACTION BAR */}
       <div className={`neo-mobile-action-bar ${isScrolledDown ? 'hidden' : ''}`}>
-        <Link to="/archive" className="neo-action-btn"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></Link>
+        <a href="/archive" className="neo-action-btn"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
         <button className={`neo-action-btn ${savedArticles.includes(post.id) ? 'saved' : ''}`} onClick={() => toggleBookmark(post.id)}>
           <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
         </button>
@@ -527,4 +468,4 @@ const Post = () => {
   );
 };
 
-export default Post;
+export default Single;
